@@ -3,6 +3,7 @@ export interface Movie {
   title: string;
   posterUrl: string;
   bannerUrl: string;
+  'data-ai-hint': string;
   summary: string;
   trailerUrl: string;
   ratings: {
