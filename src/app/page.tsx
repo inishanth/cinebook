@@ -31,12 +31,7 @@ export default function Home() {
   const categories = Object.keys(categorizedMovies);
 
   return (
-    <div className="flex flex-col space-y-12">
-      <header className="text-center">
-        <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary">Welcome to ReelDeal</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Discover your next binge-worthy show.</p>
-      </header>
-      
+    <div className="flex flex-col space-y-8">
       {categories.map((category) => (
         <MovieCategoryRow
           key={category}
