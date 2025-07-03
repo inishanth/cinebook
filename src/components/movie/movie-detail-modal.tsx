@@ -33,9 +33,8 @@ export function MovieDetailModal({ movie, isOpen, onClose }: MovieDetailModalPro
           <Image
             src={`${movie.bannerUrl}?${movie.id}`}
             alt={`Banner for ${movie.title}`}
-            layout="fill"
-            objectFit="cover"
-            className="rounded-t-lg"
+            fill
+            className="object-cover rounded-t-lg"
             data-ai-hint={movie['data-ai-hint']}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />

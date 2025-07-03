@@ -53,8 +53,8 @@ const SwipeCard = ({
         <Image
           src={`${movie.posterUrl}?${movie.id}`}
           alt={movie.title}
-          layout="fill"
-          objectFit="cover"
+          fill
+          className="object-cover"
           draggable="false"
           data-ai-hint={movie['data-ai-hint']}
         />
