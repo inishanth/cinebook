@@ -10,14 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import { ImdbLogo, RottenTomatoesLogo } from '@/components/icons/rating-logos';
+import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 
 const SwipeCard = ({
   movie,
   onSwipe,
+  onCardTap,
   active,
 }: {
   movie: Movie;
   onSwipe: (direction: 'left' | 'right') => void;
+  onCardTap: () => void;
   active: boolean;
 }) => {
   const cardVariants = {
@@ -43,11 +46,12 @@ const SwipeCard = ({
           onSwipe('left');
         }
       }}
+      onTap={active ? onCardTap : undefined}
       variants={cardVariants}
       initial="initial"
       animate="animate"
       exit="exit"
-      className="absolute"
+      className="absolute cursor-pointer"
     >
       <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] overflow-hidden shadow-2xl bg-secondary relative">
         <Image
@@ -84,6 +88,15 @@ export default function SwipePage() {
   const [movieStack, setMovieStack] = React.useState<Movie[]>([]);
   const [lastAction, setLastAction] = React.useState<{type: 'like' | 'reject', movie: Movie} | null>(null);
   const [swipeDirection, setSwipeDirection] = React.useState<'left' | 'right' | null>(null);
+  const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
+
+  const handleOpenModal = (movie: Movie) => {
+    setSelectedMovie(movie);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedMovie(null);
+  };
 
   React.useEffect(() => {
     const watchlistIds = watchlist.map((m) => m.id);
@@ -134,6 +147,7 @@ export default function SwipePage() {
                 key={movie.id}
                 movie={movie}
                 onSwipe={handleSwipe}
+                onCardTap={() => handleOpenModal(movie)}
                 active={index === movieStack.length - 1}
               />
             ))
@@ -173,6 +187,12 @@ export default function SwipePage() {
           <Heart className="w-8 h-8" />
         </Button>
       </div>
+
+      <MovieDetailModal
+        movie={selectedMovie}
+        isOpen={!!selectedMovie}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }
