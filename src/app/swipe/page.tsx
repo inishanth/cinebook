@@ -46,7 +46,6 @@ const SwipeCard = ({
       initial="initial"
       animate="animate"
       exit="exit"
-      custom={offset => (offset.x > 0 ? 'right' : 'left')}
       className="absolute"
     >
       <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] overflow-hidden shadow-2xl bg-secondary relative">
@@ -73,6 +72,7 @@ export default function SwipePage() {
   const { watchlist, rejected, addToWatchlist, rejectMovie } = useWatchlist();
   const [movieStack, setMovieStack] = React.useState<Movie[]>([]);
   const [lastAction, setLastAction] = React.useState<{type: 'like' | 'reject', movie: Movie} | null>(null);
+  const [swipeDirection, setSwipeDirection] = React.useState<'left' | 'right' | null>(null);
 
   React.useEffect(() => {
     const watchlistIds = watchlist.map((m) => m.id);
@@ -85,6 +85,7 @@ export default function SwipePage() {
   const handleSwipe = (direction: 'left' | 'right') => {
     if (movieStack.length === 0) return;
     
+    setSwipeDirection(direction);
     const movie = movieStack[movieStack.length - 1];
 
     if (direction === 'right') {
@@ -115,7 +116,7 @@ export default function SwipePage() {
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-8">
       <div className="relative w-[350px] h-[525px] flex items-center justify-center">
-        <AnimatePresence>
+        <AnimatePresence custom={swipeDirection}>
           {movieStack.length > 0 ? (
             movieStack.map((movie, index) => (
               <SwipeCard
