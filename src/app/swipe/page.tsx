@@ -38,11 +38,11 @@ const SwipeCard = ({
     <motion.div
       drag={active ? "x" : false}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.7}
+      dragElastic={0.6}
       onDragEnd={(event, { offset }) => {
-        if (offset.x > 100) {
+        if (offset.x > 80) {
           onSwipe('right');
-        } else if (offset.x < -100) {
+        } else if (offset.x < -80) {
           onSwipe('left');
         }
       }}
