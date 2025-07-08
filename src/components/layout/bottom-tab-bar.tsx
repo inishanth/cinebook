@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Flame, Settings } from 'lucide-react';
+import { Home, Clapperboard, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/swipe', label: 'Swipe', icon: Flame },
+  { href: '/swipe', label: 'Swipe', icon: Clapperboard },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

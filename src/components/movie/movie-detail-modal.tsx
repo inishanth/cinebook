@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import type { Movie } from '@/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
@@ -27,27 +27,46 @@ export function MovieDetailModal({ movie, isOpen, onClose }: MovieDetailModalPro
   const isInWatchlist = isMovieInWatchlist(movie.id);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl bg-background border-border p-0">
-        <div className="relative h-64 md:h-96">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent
+        side="bottom"
+        className="h-[90vh] bg-background border-t-2 border-primary p-0 flex flex-col"
+      >
+        <div className="relative h-64 md:h-96 flex-shrink-0">
           <Image
-            src={`${movie.bannerUrl}?${movie.id}`}
+            src={movie.bannerUrl}
             alt={`Banner for ${movie.title}`}
             fill
-            className="object-cover rounded-t-lg"
+            className="object-cover"
             data-ai-hint={movie['data-ai-hint']}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         </div>
-        <div className="p-6 pt-0 -mt-20 z-10 relative">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-headline text-white">{movie.title}</DialogTitle>
-          </DialogHeader>
+        <div className="flex-grow overflow-y-auto p-6 -mt-24 z-10 relative text-white">
+          <SheetHeader className="text-left">
+            <SheetTitle className="text-3xl font-headline ">{movie.title}</SheetTitle>
+          </SheetHeader>
           <div className="grid md:grid-cols-3 gap-6 mt-4">
-            <div className="md:col-span-2">
-              <DialogDescription className="text-muted-foreground">{movie.summary}</DialogDescription>
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold text-foreground mb-2">Available On</h3>
+            <div className="md:col-span-2 space-y-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <ImdbLogo className="h-6 w-auto" />
+                  <Badge variant="secondary" className="text-lg">{movie.ratings.imdb}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RottenTomatoesLogo className="h-6 w-auto" />
+                  <Badge variant="secondary" className="text-lg">{movie.ratings.rottenTomatoes}%</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MetacriticLogo className="h-6 w-auto" />
+                  <Badge variant="secondary" className="text-lg">{movie.ratings.metacritic}</Badge>
+                </div>
+              </div>
+              <SheetDescription className="text-muted-foreground text-base">{movie.summary}</SheetDescription>
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3">
+                <h3 className="text-lg font-semibold text-foreground">Available On</h3>
                 <div className="flex space-x-4">
                   {movie.platforms.map((platform) => (
                     <div key={platform} className="p-2 bg-secondary rounded-md">
@@ -57,34 +76,19 @@ export function MovieDetailModal({ movie, isOpen, onClose }: MovieDetailModalPro
                 </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="flex flex-col gap-3">
-                 <h3 className="text-lg font-semibold text-foreground">Ratings</h3>
-                <div className="flex items-center gap-3">
-                  <ImdbLogo className="h-6 w-auto" />
-                  <Badge variant="secondary" className="text-lg">{movie.ratings.imdb}</Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <RottenTomatoesLogo className="h-6 w-auto" />
-                  <Badge variant="secondary" className="text-lg">{movie.ratings.rottenTomatoes}%</Badge>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MetacriticLogo className="h-6 w-auto" />
-                  <Badge variant="secondary" className="text-lg">{movie.ratings.metacritic}</Badge>
-                </div>
-              </div>
-               <Button asChild className="w-full" variant="outline">
-                <a href={movie.trailerUrl} target="_blank" rel="noopener noreferrer">
-                  Watch Trailer
-                </a>
-              </Button>
-              <Button onClick={() => addToWatchlist(movie)} disabled={isInWatchlist} className="w-full">
-                {isInWatchlist ? 'Added to Watchlist' : 'Add to Watchlist'}
-              </Button>
-            </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <div className="flex-shrink-0 grid grid-cols-2 gap-4 p-6 border-t border-border bg-background">
+          <Button asChild className="w-full" variant="outline">
+            <a href={movie.trailerUrl} target="_blank" rel="noopener noreferrer">
+              Watch Trailer
+            </a>
+          </Button>
+          <Button onClick={() => addToWatchlist(movie)} disabled={isInWatchlist} className="w-full">
+            {isInWatchlist ? 'Added to Watchlist' : 'Add to Watchlist'}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

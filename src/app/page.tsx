@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { motion } from 'framer-motion';
 import { movies as allMovies } from '@/data/movies';
 import type { Movie } from '@/types';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
@@ -30,22 +31,50 @@ export default function Home() {
 
   const categories = Object.keys(categorizedMovies);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+      },
+    },
+  };
+
   return (
-    <div className="flex flex-col space-y-8">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col space-y-12"
+    >
       {categories.map((category) => (
-        <MovieCategoryRow
-          key={category}
-          title={category}
-          movies={categorizedMovies[category]}
-          onMovieClick={handleOpenModal}
-        />
+        <motion.div key={category} variants={itemVariants}>
+          <MovieCategoryRow
+            title={category}
+            movies={categorizedMovies[category]}
+            onMovieClick={handleOpenModal}
+          />
+        </motion.div>
       ))}
-      
+
       <MovieDetailModal
         movie={selectedMovie}
         isOpen={!!selectedMovie}
         onClose={handleCloseModal}
       />
-    </div>
+    </motion.div>
   );
 }

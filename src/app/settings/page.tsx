@@ -33,7 +33,7 @@ export default function SettingsPage() {
                   {watchlist.map((movie) => (
                     <div key={movie.id} className="relative group">
                       <Image
-                        src={`${movie.posterUrl}?${movie.id}`}
+                        src={movie.posterUrl}
                         alt={`Poster for ${movie.title}`}
                         width={200}
                         height={300}

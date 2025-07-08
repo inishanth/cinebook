@@ -58,7 +58,7 @@ const SwipeCard = ({
     >
       <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] overflow-hidden shadow-2xl bg-secondary relative">
         <Image
-          src={`${movie.posterUrl}?${movie.id}`}
+          src={movie.posterUrl}
           alt={movie.title}
           fill
           className="object-cover"
@@ -123,7 +123,10 @@ export default function SwipePage() {
       setLastAction({ type: 'reject', movie });
     }
 
-    setMovieStack((prev) => prev.slice(0, prev.length - 1));
+    // Set a timeout to remove the card from the stack, allowing the exit animation to complete.
+    setTimeout(() => {
+        setMovieStack((prev) => prev.slice(0, prev.length - 1));
+    }, 300);
   };
   
   // This undo functionality is a bit basic and won't be persisted.
@@ -149,7 +152,10 @@ export default function SwipePage() {
               <SwipeCard
                 key={movie.id}
                 movie={movie}
-                onSwipe={handleSwipe}
+                onSwipe={(dir) => {
+                    setSwipeDirection(dir);
+                    handleSwipe(dir);
+                }}
                 onCardTap={() => handleOpenModal(movie)}
                 active={index === movieStack.length - 1}
               />
