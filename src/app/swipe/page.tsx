@@ -40,13 +40,16 @@ const SwipeCard = ({
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0.6}
       onDragEnd={(event, { offset }) => {
-        if (offset.x > 80) {
+        const swipeThreshold = 80;
+        const tapThreshold = 5;
+        if (offset.x > swipeThreshold) {
           onSwipe('right');
-        } else if (offset.x < -80) {
+        } else if (offset.x < -swipeThreshold) {
           onSwipe('left');
+        } else if (Math.abs(offset.x) < tapThreshold && Math.abs(offset.y) < tapThreshold) {
+          onCardTap();
         }
       }}
-      onTap={active ? onCardTap : undefined}
       variants={cardVariants}
       initial="initial"
       animate="animate"
