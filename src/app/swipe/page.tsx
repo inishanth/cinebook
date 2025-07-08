@@ -9,6 +9,7 @@ import { useWatchlist } from '@/context/watchlist-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import { ImdbLogo, RottenTomatoesLogo } from '@/components/icons/rating-logos';
 
 const SwipeCard = ({
   movie,
@@ -58,9 +59,19 @@ const SwipeCard = ({
           data-ai-hint={movie['data-ai-hint']}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
-        <CardContent className="absolute bottom-0 left-0 p-4 text-white">
+        <CardContent className="absolute bottom-0 left-0 p-4 text-white w-full">
           <h3 className="text-2xl font-headline font-bold">{movie.title}</h3>
-          <p className="text-sm text-gray-300 line-clamp-2">{movie.summary}</p>
+          <p className="text-sm text-gray-300 line-clamp-2 mt-1">{movie.summary}</p>
+          <div className="flex items-center justify-between mt-4 border-t border-white/20 pt-2">
+            <div className="flex items-center gap-2">
+              <ImdbLogo className="h-5 w-auto" />
+              <span className="font-bold text-sm">{movie.ratings.imdb}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <RottenTomatoesLogo className="h-5 w-auto" />
+              <span className="font-bold text-sm">{movie.ratings.rottenTomatoes}%</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
