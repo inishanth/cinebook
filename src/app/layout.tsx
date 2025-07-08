@@ -3,7 +3,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { WatchlistProvider } from '@/context/watchlist-context';
-import { Header } from '@/components/layout/header';
+import { BottomTabBar } from '@/components/layout/bottom-tab-bar';
 
 export const metadata: Metadata = {
   title: 'ReelDeal',
@@ -24,10 +24,10 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
         <WatchlistProvider>
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
+          <main className="flex-grow container mx-auto px-4 py-8 pb-24">
             {children}
           </main>
+          <BottomTabBar />
           <Toaster />
         </WatchlistProvider>
       </body>
