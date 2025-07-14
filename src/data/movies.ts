@@ -1,3 +1,4 @@
+
 import type { Movie } from '@/types';
 
 export const movies: Movie[] = [
@@ -324,5 +325,41 @@ export const movies: Movie[] = [
     ratings: { imdb: 7.3, rottenTomatoes: 90, metacritic: 87 },
     platforms: ['netflix'],
     category: 'Horror Picks',
+  },
+  {
+    id: 28,
+    title: 'A Quiet Place',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg',
+    bannerUrl: 'https://image.tmdb.org/t/p/original/mYJ9t3tnVh2Inp0wK2dYk3e5sve.jpg',
+    'data-ai-hint': 'monster suspense',
+    summary: 'A family is forced to live in silence while hiding from creatures that hunt by sound.',
+    trailerUrl: 'https://www.youtube.com/watch?v=WR7cc5t7tv8',
+    ratings: { imdb: 7.5, rottenTomatoes: 96, metacritic: 82 },
+    platforms: ['hulu', 'prime-video'],
+    category: 'Horror Picks',
+  },
+  {
+    id: 29,
+    title: 'Coco',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/gGEsBPAijhVUFoiNpgZXqRVWJpC.jpg',
+    bannerUrl: 'https://image.tmdb.org/t/p/original/askg3SMvhqEl4OL52Y5WhxRZsT.jpg',
+    'data-ai-hint': 'mexican skeleton guitar',
+    summary: 'Aspiring musician Miguel, confronted with his family\'s ancestral ban on music, enters the Land of the Dead to find his great-great-grandfather, a legendary singer.',
+    trailerUrl: 'https://www.youtube.com/watch?v=xlnPHQ3TLX8',
+    ratings: { imdb: 8.4, rottenTomatoes: 97, metacritic: 81 },
+    platforms: ['prime-video'],
+    category: 'Animated Features',
+  },
+  {
+    id: 30,
+    title: 'Django Unchained',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/7oWY8VDWW7thTzWh3OKYRkWUlD5.jpg',
+    bannerUrl: 'https://image.tmdb.org/t/p/original/2oZklIzUbvZXXzIF1vy7enJS5c1.jpg',
+    'data-ai-hint': 'cowboy shootout',
+    summary: 'With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.',
+    trailerUrl: 'https://www.youtube.com/watch?v=0fUCuvNlOCg',
+    ratings: { imdb: 8.4, rottenTomatoes: 87, metacritic: 81 },
+    platforms: ['netflix'],
+    category: 'Action & Thrillers',
   },
 ];
