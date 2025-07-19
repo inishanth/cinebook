@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -73,12 +74,12 @@ function MultiSelectFilter<T extends { id: any, name: string }>({
     title,
     options,
     selected,
-    onSelect,
+    onToggle,
 }: {
     title: string,
     options: T[],
     selected: T[],
-    onSelect: (item: T) => void
+    onToggle: (item: T) => void
 }) {
     const [open, setOpen] = React.useState(false);
     const selectedIds = new Set(selected.map(s => s.id));
@@ -100,13 +101,9 @@ function MultiSelectFilter<T extends { id: any, name: string }>({
                             {options.map((item) => (
                                 <CommandItem
                                     key={item.id}
-                                    value={item.id.toString()}
-                                    onSelect={(currentValue) => {
-                                        const selectedItem = options.find(o => o.id.toString() === currentValue);
-                                        if (selectedItem) {
-                                            onSelect(selectedItem);
-                                        }
-                                        setOpen(false);
+                                    value={item.name}
+                                    onSelect={() => {
+                                        onToggle(item);
                                     }}
                                 >
                                     <Check className={`mr-2 h-4 w-4 ${selectedIds.has(item.id) ? "opacity-100" : "opacity-0"}`} />
@@ -276,17 +273,23 @@ export default function Home() {
 
     }, [selectedGenres, selectedLanguages, selectedActors, selectedPlatforms, selectedRecency, hasActiveFilters])
 
-    const toggleSelection = <T extends {id: any}>(list: T[], item: T): T[] => {
-        if (list.some(g => g.id === item.id)) {
-            return list.filter(g => g.id !== item.id);
-        } else {
-            return [...list, item];
-        }
+    const toggleSelection = <T extends {id: any}>(
+        setter: React.Dispatch<React.SetStateAction<T[]>>,
+        item: T
+    ) => {
+        setter(prev => {
+            if (prev.some(p => p.id === item.id)) {
+                return prev.filter(p => p.id !== item.id);
+            } else {
+                return [...prev, item];
+            }
+        });
     };
     
-    const handleGenreSelect = (genre: Genre) => setSelectedGenres(prev => toggleSelection(prev, genre));
-    const handleLanguageSelect = (language: Language) => setSelectedLanguages(prev => toggleSelection(prev, language));
-    const handlePlatformSelect = (platform: WatchProvider) => setSelectedPlatforms(prev => toggleSelection(prev, platform));
+    const handleGenreToggle = (genre: Genre) => toggleSelection(setSelectedGenres, genre);
+    const handleLanguageToggle = (language: Language) => toggleSelection(setSelectedLanguages, language);
+    const handlePlatformToggle = (platform: WatchProvider) => toggleSelection(setSelectedPlatforms, platform);
+
     const handleActorSelect = (actor: Actor) => {
         if (!selectedActors.some(a => a.id === actor.id)) {
             setSelectedActors(prev => [...prev, actor]);
@@ -337,9 +340,9 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="flex flex-wrap gap-4 items-start">
-                    <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
-                    <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
-                    <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
+                    <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onToggle={handleGenreToggle} />
+                    <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onToggle={handleLanguageToggle} />
+                    <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onToggle={handlePlatformToggle} />
                     <ActorFilter selected={selectedActors} onSelect={handleActorSelect} onRemove={handleActorRemove} />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full md:w-[200px]">
