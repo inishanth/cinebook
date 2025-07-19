@@ -4,6 +4,13 @@ const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
+// Genre IDs from TMDb
+const GENRE_IDS = {
+    action: 28,
+    comedy: 35,
+    // Add more genres here if needed
+};
+
 const get = async <T>(path: string, params: Record<string, string> = {}): Promise<T> => {
   if (!API_KEY) {
     throw new Error('TMDb API key is not configured. Please add NEXT_PUBLIC_TMDB_API_KEY to your .env.local file.');
@@ -48,12 +55,32 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
 };
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
-    let endpoint = '/movie/popular';
-    if(categoryId === 'top_rated') endpoint = '/movie/top_rated';
-    if(categoryId === 'upcoming') endpoint = '/movie/upcoming';
-    if(categoryId === 'now_playing') endpoint = '/movie/now_playing';
+    let endpoint = '';
+    let params = {};
 
-    const data = await get<{ results: Movie[] }>(endpoint);
+    switch(categoryId) {
+        case 'popular':
+            endpoint = '/movie/popular';
+            break;
+        case 'top_rated':
+            endpoint = '/movie/top_rated';
+            break;
+        case 'upcoming':
+            endpoint = '/movie/upcoming';
+            break;
+        case 'now_playing':
+            endpoint = '/movie/now_playing';
+            break;
+        case 'action':
+        case 'comedy':
+            endpoint = '/discover/movie';
+            params = { with_genres: String(GENRE_IDS[categoryId as keyof typeof GENRE_IDS]) };
+            break;
+        default:
+            endpoint = '/movie/popular';
+    }
+
+    const data = await get<{ results: Movie[] }>(endpoint, params);
     return data.results;
 }
 

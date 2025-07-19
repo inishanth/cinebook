@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
+    { id: 'action', title: 'Action' },
+    { id: 'comedy', title: 'Comedy' },
     { id: 'upcoming', title: 'Upcoming' },
     { id: 'now_playing', title: 'Now Playing' },
 ];
@@ -39,10 +41,20 @@ export default function Home() {
       try {
         setLoading(true);
         const allMoviesData: Record<string, Movie[]> = {};
-        for (const category of movieCategories) {
-          const movies = await getMoviesByCategory(category.id);
-          allMoviesData[category.title] = movies;
+        // Use Promise.all to fetch categories concurrently
+        const promises = movieCategories.map(category => 
+            getMoviesByCategory(category.id).then(movies => ({
+                title: category.title,
+                movies
+            }))
+        );
+
+        const results = await Promise.all(promises);
+        
+        for (const result of results) {
+            allMoviesData[result.title] = result.movies;
         }
+
         setMoviesByCat(allMoviesData);
         setError(null);
       } catch (e) {
@@ -72,7 +84,7 @@ export default function Home() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
+        staggerChildren: 0.1,
       },
     },
   };
@@ -108,16 +120,18 @@ export default function Home() {
         className="flex flex-col space-y-12"
       >
         {loading ? (
-            [...Array(4)].map((_, i) => <CategoryRowSkeleton key={i} />)
+            movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)
         ) : (
-            Object.entries(moviesByCat).map(([title, movies]) => (
-                <motion.div key={title} variants={itemVariants}>
-                    <MovieCategoryRow
-                        title={title}
-                        movies={movies}
-                        onMovieClick={handleOpenModal}
-                    />
-                </motion.div>
+            movieCategories.map((cat) => (
+                moviesByCat[cat.title] && moviesByCat[cat.title].length > 0 && (
+                    <motion.div key={cat.title} variants={itemVariants}>
+                        <MovieCategoryRow
+                            title={cat.title}
+                            movies={moviesByCat[cat.title]}
+                            onMovieClick={handleOpenModal}
+                        />
+                    </motion.div>
+                )
             ))
         )}
       </motion.div>
