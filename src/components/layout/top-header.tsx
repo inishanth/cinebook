@@ -2,18 +2,11 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Film } from 'lucide-react';
+import { Search, Film, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { searchMovies, getPosterUrl } from '@/lib/movie-service';
 import type { Movie } from '@/types';
@@ -22,17 +15,59 @@ import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
-function SearchDialog() {
+function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
+    if (loading) {
+        return (
+            <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4 p-2">
+                        <Skeleton className="w-10 h-16 rounded-md" />
+                        <Skeleton className="h-6 flex-1" />
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    if (results.length === 0) {
+        return <p className="text-muted-foreground text-center p-4">No results found.</p>;
+    }
+
+    return (
+        <ul className="space-y-4">
+            {results.map((movie) => (
+                <li
+                    key={movie.id}
+                    className="flex items-center space-x-4 cursor-pointer hover:bg-accent p-2 rounded-md"
+                    onClick={() => onMovieClick(movie)}
+                >
+                    <Image
+                        src={getPosterUrl(movie.poster_path, 'w92')}
+                        alt={movie.title}
+                        width={40}
+                        height={60}
+                        className="rounded-md"
+                    />
+                    <span className="font-medium">{movie.title}</span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+function InlineSearchBar() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [results, setResults] = React.useState<Movie[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [showResults, setShowResults] = React.useState(false);
   const { toast } = useToast();
+  const searchRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (searchQuery.trim().length > 2) {
       setLoading(true);
+      setShowResults(true);
       const timer = setTimeout(async () => {
         try {
           const movies = await searchMovies(searchQuery);
@@ -50,6 +85,7 @@ function SearchDialog() {
       return () => clearTimeout(timer);
     } else {
       setResults([]);
+      setShowResults(false);
     }
   }, [searchQuery, toast]);
   
@@ -61,78 +97,65 @@ function SearchDialog() {
     setSelectedMovie(null);
   };
 
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
+  const handleClearSearch = () => {
     setSearchQuery('');
     setResults([]);
+    setShowResults(false);
   }
 
-  return (
-    <Dialog open={dialogOpen} onOpenChange={(open) => {
-      if (!open) {
-        handleCloseDialog();
-      } else {
-        setDialogOpen(true);
+  // Close results when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
       }
-    }}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full max-w-sm justify-start text-muted-foreground border-primary/50 hover:border-primary">
-          <Search className="h-4 w-4 mr-2" />
-          Search movies...
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-secondary border-border">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-primary">Search Movies</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Input
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchRef]);
+
+
+  return (
+    <div className="relative w-full max-w-sm" ref={searchRef}>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
             id="search"
             aria-label="Search for a movie"
-            placeholder="e.g. Inception"
+            placeholder="Search movies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="col-span-3"
-          />
+            onFocus={() => {
+                if (searchQuery.trim().length > 2) setShowResults(true);
+            }}
+            className="pl-9 pr-9"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={handleClearSearch}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {showResults && (
+        <div className="absolute top-full mt-2 w-full max-h-96 overflow-y-auto bg-secondary border border-border rounded-md shadow-lg z-50">
+           <SearchResults results={results} loading={loading} onMovieClick={handleMovieClick} />
         </div>
-        <div className="max-h-80 overflow-y-auto space-y-2">
-            {loading ? (
-                 [...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-4 p-2">
-                        <Skeleton className="w-10 h-16 rounded-md" />
-                        <Skeleton className="h-6 flex-1" />
-                    </div>
-                ))
-            ) : results.length > 0 ? (
-            <ul className="space-y-4">
-              {results.map((movie) => (
-                <li
-                  key={movie.id}
-                  className="flex items-center space-x-4 cursor-pointer hover:bg-accent p-2 rounded-md"
-                  onClick={() => handleMovieClick(movie)}
-                >
-                  <Image
-                    src={getPosterUrl(movie.poster_path, 'w92')}
-                    alt={movie.title}
-                    width={40}
-                    height={60}
-                    className="rounded-md"
-                  />
-                  <span className="font-medium">{movie.title}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            searchQuery.length > 2 && <p className="text-muted-foreground text-center">No results found.</p>
-          )}
-        </div>
-        <MovieDetailModal
+      )}
+
+      <MovieDetailModal
           movie={selectedMovie}
           isOpen={!!selectedMovie}
           onClose={handleCloseModal}
-        />
-      </DialogContent>
-    </Dialog>
+      />
+    </div>
   );
 }
 
@@ -156,12 +179,15 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <div className="flex items-center gap-2 mr-auto">
                     <Film className="h-8 w-8 text-primary" />
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
-                    <SearchDialog />
+                    <InlineSearchBar />
                 </div>
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 ml-auto invisible">
+                    {/* Placeholder to balance the header */}
+                    <Film className="h-8 w-8" />
+                    <h1 className="text-2xl font-headline hidden sm:block">ReelDeal</h1>
                 </div>
             </div>
         </header>
