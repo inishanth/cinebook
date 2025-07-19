@@ -2,7 +2,7 @@ import Image from 'next/image';
 import * as React from 'react';
 import type { Movie, MovieDetails } from '@/types';
 import { getMovieDetails, getBannerUrl } from '@/lib/movie-service';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
@@ -10,7 +10,7 @@ import { ImdbLogo, MetacriticLogo, RottenTomatoesLogo } from '../icons/rating-lo
 import { NetflixLogo, HuluLogo, PrimeVideoLogo } from '../icons/platform-logos';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, Heart, Clock, Tags } from 'lucide-react';
+import { ExternalLink, Heart, Clock, Tags, X } from 'lucide-react';
 
 interface MovieDetailModalProps {
   movie: Movie | null;
@@ -96,6 +96,10 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
+         <SheetClose className="absolute right-4 top-4 z-20 rounded-full p-1 bg-background/50 text-foreground opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <X className="h-6 w-6" />
+          <span className="sr-only">Close</span>
+        </SheetClose>
 
         <div className="flex-grow overflow-y-auto z-10 relative">
             {loading ? <DetailSkeleton /> : (
