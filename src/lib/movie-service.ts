@@ -116,13 +116,13 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
 
 export const discoverMovies = async ({
     recency,
-    genreIds,
+    genreId,
     language,
     platformId,
     actorId,
 }: {
     recency?: string,
-    genreIds?: number[],
+    genreId?: string,
     language?: string,
     platformId?: string,
     actorId?: string,
@@ -155,8 +155,8 @@ export const discoverMovies = async ({
         }
     }
     
-    if (genreIds && genreIds.length > 0) {
-        params.with_genres = genreIds.join(',');
+    if (genreId && genreId !== 'all') {
+        params.with_genres = genreId;
     }
 
     if (language && language !== 'all') {

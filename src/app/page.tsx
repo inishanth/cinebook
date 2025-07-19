@@ -71,166 +71,6 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
     )
 }
 
-function MultiSelectCheckboxFilter({
-    title,
-    options,
-    selectedValues,
-    onSelectedValuesChange,
-    placeholder,
-    className
-}: {
-    title: string;
-    options: { id: number | string; name: string }[];
-    selectedValues: number[];
-    onSelectedValuesChange: (values: number[]) => void;
-    placeholder: string;
-    className?: string;
-}) {
-    const [open, setOpen] = React.useState(false);
-
-    const handleToggle = (id: number) => {
-        const newSelected = selectedValues.includes(id)
-            ? selectedValues.filter(v => v !== id)
-            : [...selectedValues, id];
-        onSelectedValuesChange(newSelected);
-    };
-    
-    const selectedCount = selectedValues.length;
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="secondary"
-                    role="combobox"
-                    aria-expanded={open}
-                    className={cn("w-full justify-between", className)}
-                >
-                    <div className="flex items-center gap-2">
-                         {placeholder}
-                         {selectedCount > 0 && <Badge>{selectedCount}</Badge>}
-                    </div>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
-                    <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
-                    <CommandList>
-                        <CommandGroup>
-                            {options.map((option) => (
-                                <CommandItem
-                                    key={option.id}
-                                    onSelect={() => handleToggle(Number(option.id))}
-                                    className="flex items-center gap-2"
-                                >
-                                    <Checkbox
-                                        id={`genre-${option.id}`}
-                                        checked={selectedValues.includes(Number(option.id))}
-                                        onCheckedChange={() => handleToggle(Number(option.id))}
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                    <label htmlFor={`genre-${option.id}`} className="cursor-pointer flex-1">
-                                      {option.name}
-                                    </label>
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-                {selectedCount > 0 && (
-                    <div className="p-2 border-t">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => onSelectedValuesChange([])}
-                        >
-                           Clear selected
-                        </Button>
-                    </div>
-                )}
-            </PopoverContent>
-        </Popover>
-    );
-}
-
-function SearchableSelectFilter({ 
-    title, 
-    options, 
-    value, 
-    onValueChange,
-    placeholder,
-    className
-}: { 
-    title: string;
-    options: { id: number | string; name: string }[];
-    value: string;
-    onValueChange: (value: string) => void;
-    placeholder: string;
-    className?: string;
-}) {
-    const [open, setOpen] = React.useState(false);
-  
-    const selectedOption = options.find(opt => String(opt.id) === value);
-  
-    return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="secondary"
-            role="combobox"
-            aria-expanded={open}
-            className={cn("w-full justify-between", className)}
-          >
-            {selectedOption ? selectedOption.name : placeholder}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-          <Command>
-            <CommandInput placeholder={`Search ${title}...`} />
-            <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
-            <CommandList>
-              <CommandGroup>
-                <CommandItem
-                  key="all"
-                  value="all"
-                  onSelect={() => {
-                    onValueChange('all');
-                    setOpen(false);
-                  }}
-                >
-                  <Check className={cn("mr-2 h-4 w-4", value === 'all' ? "opacity-100" : "opacity-0")} />
-                  {placeholder}
-                </CommandItem>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.id}
-                    value={option.name}
-                    onSelect={(currentValue) => {
-                      const selectedVal = options.find(opt => opt.name.toLowerCase() === currentValue)?.id
-                      onValueChange(selectedVal ? String(selectedVal) : 'all');
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        String(option.id) === value ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {option.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    );
-  }
-
 export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
@@ -240,7 +80,7 @@ export default function Home() {
     const [allPlatforms, setAllPlatforms] = React.useState<Platform[]>([]);
     const [allActors, setAllActors] = React.useState<Actor[]>([]);
 
-    const [selectedGenres, setSelectedGenres] = React.useState<number[]>([]);
+    const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
     const [selectedPlatform, setSelectedPlatform] = React.useState('all');
     const [selectedActor, setSelectedActor] = React.useState('all');
@@ -253,7 +93,7 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedRecency !== 'all' || selectedGenres.length > 0 || selectedLanguage !== 'all' || selectedPlatform !== 'all' || selectedActor !== 'all';
+    const hasActiveFilters = selectedRecency !== 'all' || selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedPlatform !== 'all' || selectedActor !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
@@ -310,7 +150,7 @@ export default function Home() {
             try {
                 const movies = await discoverMovies({
                     recency: selectedRecency,
-                    genreIds: selectedGenres,
+                    genreId: selectedGenre,
                     language: selectedLanguage,
                     platformId: selectedPlatform,
                     actorId: selectedActor,
@@ -332,11 +172,11 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedRecency, selectedGenres, selectedLanguage, selectedPlatform, selectedActor, hasActiveFilters])
+    }, [selectedRecency, selectedGenre, selectedLanguage, selectedPlatform, selectedActor, hasActiveFilters])
 
     const handleClearFilters = () => {
         setSelectedRecency('all');
-        setSelectedGenres([]);
+        setSelectedGenre('all');
         setSelectedLanguage('all');
         setSelectedPlatform('all');
         setSelectedActor('all');
@@ -373,13 +213,19 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
-                    <MultiSelectCheckboxFilter
-                        title="Genres"
-                        options={allGenres}
-                        selectedValues={selectedGenres}
-                        onSelectedValuesChange={setSelectedGenres}
-                        placeholder="All Genres"
-                    />
+                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="All Genres" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Genres</SelectItem>
+                            {allGenres.map(opt => (
+                                <SelectItem key={opt.id} value={String(opt.id)}>
+                                    {opt.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full" variant="secondary">
                             <SelectValue placeholder="Recency" />
@@ -392,27 +238,45 @@ export default function Home() {
                             ))}
                         </SelectContent>
                     </Select>
-                     <SearchableSelectFilter 
-                        title="Languages"
-                        options={allLanguages}
-                        value={selectedLanguage}
-                        onValueChange={setSelectedLanguage}
-                        placeholder="All Languages"
-                    />
-                     <SearchableSelectFilter 
-                        title="Platforms"
-                        options={allPlatforms}
-                        value={selectedPlatform}
-                        onValueChange={setSelectedPlatform}
-                        placeholder="All Platforms"
-                    />
-                    <SearchableSelectFilter 
-                        title="Actors"
-                        options={allActors}
-                        value={selectedActor}
-                        onValueChange={setSelectedActor}
-                        placeholder="Any Actor"
-                    />
+                     <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="All Languages" />
+                        </SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="all">All Languages</SelectItem>
+                            {allLanguages.map(opt => (
+                                <SelectItem key={opt.id} value={String(opt.id)}>
+                                    {opt.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="All Platforms" />
+                        </SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="all">All Platforms</SelectItem>
+                            {allPlatforms.map(opt => (
+                                <SelectItem key={opt.id} value={String(opt.id)}>
+                                    {opt.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedActor} onValueChange={setSelectedActor}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="Any Actor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Any Actor</SelectItem>
+                            {allActors.map(opt => (
+                                <SelectItem key={opt.id} value={String(opt.id)}>
+                                    {opt.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
