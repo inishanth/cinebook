@@ -88,7 +88,6 @@ function MultiSelectCheckboxFilter({
     className?: string;
 }) {
     const [open, setOpen] = React.useState(false);
-    const [search, setSearch] = React.useState('');
 
     const handleToggle = (id: number) => {
         const newSelected = selectedValues.includes(id)
@@ -96,8 +95,6 @@ function MultiSelectCheckboxFilter({
             : [...selectedValues, id];
         onSelectedValuesChange(newSelected);
     };
-    
-    const filteredOptions = options.filter(option => option.name.toLowerCase().includes(search.toLowerCase()));
     
     const selectedCount = selectedValues.length;
 
@@ -121,13 +118,11 @@ function MultiSelectCheckboxFilter({
                 <Command>
                     <CommandInput 
                         placeholder={`Search ${title}...`}
-                        value={search}
-                        onValueChange={setSearch}
                     />
                     <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
                     <CommandList>
                         <CommandGroup>
-                            {filteredOptions.map((option) => (
+                            {options.map((option) => (
                                 <CommandItem
                                     key={option.id}
                                     onSelect={() => handleToggle(Number(option.id))}
