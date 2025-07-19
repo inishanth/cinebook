@@ -179,7 +179,7 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <div className="flex items-center gap-2 mr-auto">
                     <Film className="h-8 w-8 text-primary" />
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
                     <InlineSearchBar />
@@ -187,7 +187,7 @@ export function TopHeader() {
                 <div className="flex items-center gap-2 ml-auto invisible">
                     {/* Placeholder to balance the header */}
                     <Film className="h-8 w-8" />
-                    <h1 className="text-2xl font-headline hidden sm:block">ReelDeal</h1>
+                    <h1 className="text-2xl font-headline hidden sm:block">CineBook</h1>
                 </div>
             </div>
         </header>
