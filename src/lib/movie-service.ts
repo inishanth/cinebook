@@ -88,8 +88,29 @@ export const getGenres = async (): Promise<Genre[]> => {
 };
 
 export const getLanguages = async (): Promise<Language[]> => {
-    const data = await get<Language[]>('/configuration/languages');
-    return data.filter(lang => lang.english_name); // Filter out languages without an english name
+    // Return a curated list of languages to avoid overwhelming the user.
+    const curatedLanguages: Omit<Language, 'name'>[] = [
+        { iso_639_1: 'en', english_name: 'English' },
+        { iso_639_1: 'es', english_name: 'Spanish' },
+        { iso_639_1: 'fr', english_name: 'French' },
+        { iso_639_1: 'de', english_name: 'German' },
+        { iso_639_1: 'it', english_name: 'Italian' },
+        { iso_639_1: 'ja', english_name: 'Japanese' },
+        { iso_639_1: 'ko', english_name: 'Korean' },
+        { iso_639_1: 'pt', english_name: 'Portuguese' },
+        { iso_639_1: 'ru', english_name: 'Russian' },
+        { iso_639_1: 'zh', english_name: 'Chinese' },
+        { iso_639_1: 'hi', english_name: 'Hindi' },
+        { iso_639_1: 'ta', english_name: 'Tamil' },
+        { iso_639_1: 'te', english_name: 'Telugu' },
+        { iso_639_1: 'ml', english_name: 'Malayalam' },
+        { iso_639_1: 'kn', english_name: 'Kannada' },
+        { iso_639_1: 'bn', english_name: 'Bengali' },
+        { iso_639_1: 'pa', english_name: 'Punjabi' },
+        { iso_639_1: 'ar', english_name: 'Arabic' },
+        { iso_639_1: 'tr', english_name: 'Turkish' },
+    ];
+    return Promise.resolve(curatedLanguages.map(l => ({ ...l, name: l.english_name })));
 };
 
 export const searchActors = async (query: string): Promise<Actor[]> => {
