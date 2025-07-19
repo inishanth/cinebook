@@ -173,6 +173,10 @@ export const discoverMovies = async ({
         params.with_cast = actorId;
     }
     
-    const data = await get<{ results: Movie[] }>('/discover/movie', params);
-    return data.results;
+    const page1Promise = get<{ results: Movie[] }>('/discover/movie', { ...params, page: '1' });
+    const page2Promise = get<{ results: Movie[] }>('/discover/movie', { ...params, page: '2' });
+
+    const [page1Data, page2Data] = await Promise.all([page1Promise, page2Promise]);
+    
+    return [...page1Data.results, ...page2Data.results];
 }
