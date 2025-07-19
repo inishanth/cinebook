@@ -102,8 +102,11 @@ function MultiSelectFilter<T extends { id: any, name: string }>({
                                 <CommandItem
                                     key={item.id}
                                     value={item.name}
-                                    onSelect={() => {
-                                        onToggle(item);
+                                    onSelect={(currentValue) => {
+                                        const selectedItem = options.find(o => o.name.toLowerCase() === currentValue.toLowerCase());
+                                        if (selectedItem) {
+                                            onToggle(selectedItem);
+                                        }
                                     }}
                                 >
                                     <Check className={`mr-2 h-4 w-4 ${selectedIds.has(item.id) ? "opacity-100" : "opacity-0"}`} />
@@ -445,3 +448,5 @@ export default function Home() {
         </>
     );
 }
+
+    
