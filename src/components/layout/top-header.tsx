@@ -87,6 +87,7 @@ function SearchDialog() {
         <div className="grid gap-4 py-4">
           <Input
             id="search"
+            aria-label="Search for a movie"
             placeholder="e.g. Inception"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
