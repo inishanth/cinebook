@@ -1,12 +1,12 @@
 import type { Movie, MovieDetails, Genre } from '@/types';
 
-const API_KEY = process.env.TMDB_API_KEY;
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
 const get = async <T>(path: string, params: Record<string, string> = {}): Promise<T> => {
   if (!API_KEY) {
-    throw new Error('TMDb API key is not configured. Please add TMDB_API_KEY to your .env.local file.');
+    throw new Error('TMDb API key is not configured. Please add NEXT_PUBLIC_TMDB_API_KEY to your .env.local file.');
   }
 
   const urlParams = new URLSearchParams({
@@ -27,6 +27,9 @@ const get = async <T>(path: string, params: Record<string, string> = {}): Promis
     return res.json();
   } catch (error) {
     console.error('Network or fetch error:', error);
+    if (error instanceof Error) {
+        throw new Error(error.message);
+    }
     throw new Error('Failed to connect to TMDb API.');
   }
 };
