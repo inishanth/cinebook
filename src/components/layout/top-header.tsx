@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, User, Film } from 'lucide-react';
+import { Search, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -162,10 +162,6 @@ export function TopHeader() {
                     <SearchDialog />
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
-                    <Button variant="ghost" size="icon">
-                        <User className="h-6 w-6" />
-                        <span className="sr-only">Profile</span>
-                    </Button>
                 </div>
             </div>
         </header>
