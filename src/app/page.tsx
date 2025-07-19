@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -116,9 +115,6 @@ function MultiSelectCheckboxFilter({
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                 <Command>
-                    <CommandInput 
-                        placeholder={`Search ${title}...`}
-                    />
                     <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
                     <CommandList>
                         <CommandGroup>
@@ -472,3 +468,5 @@ export default function Home() {
         </>
     );
 }
+
+    
