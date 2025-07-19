@@ -76,7 +76,7 @@ function SearchDialog() {
       }
     }}>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="w-full max-w-sm justify-start text-muted-foreground">
+        <Button variant="outline" className="w-full max-w-sm justify-start text-muted-foreground border-primary/50 hover:border-primary">
           <Search className="h-4 w-4 mr-2" />
           Search movies...
         </Button>
@@ -156,7 +156,7 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <div className="flex items-center gap-2 mr-auto">
                     <Film className="h-8 w-8 text-primary" />
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">Cinebook</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
                     <SearchDialog />
