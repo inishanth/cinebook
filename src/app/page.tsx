@@ -13,6 +13,8 @@ import { ArrowLeft, Check, ChevronsUpDown, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
@@ -187,6 +189,7 @@ export default function Home() {
     const [selectedLanguages, setSelectedLanguages] = React.useState<Language[]>([]);
     const [selectedActors, setSelectedActors] = React.useState<Actor[]>([]);
     const [selectedPlatforms, setSelectedPlatforms] = React.useState<WatchProvider[]>([]);
+    const [selectedYear, setSelectedYear] = React.useState<number[]>([new Date().getFullYear()]);
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
     const [isFilteredView, setIsFilteredView] = React.useState(false);
@@ -250,7 +253,7 @@ export default function Home() {
     const handleActorRemove = (actorId: number) => setSelectedActors(prev => prev.filter(a => a.id !== actorId));
 
     const handleApplyFilters = async () => {
-        if (selectedGenres.length === 0 && selectedLanguages.length === 0 && selectedActors.length === 0 && selectedPlatforms.length === 0) {
+        if (selectedGenres.length === 0 && selectedLanguages.length === 0 && selectedActors.length === 0 && selectedPlatforms.length === 0 && selectedYear[0] === new Date().getFullYear()) {
             setIsFilteredView(false);
             return;
         }
@@ -263,6 +266,7 @@ export default function Home() {
                 languages: selectedLanguages.map(l => l.iso_639_1),
                 actors: selectedActors.map(a => a.id),
                 platforms: selectedPlatforms.map(p => p.id),
+                year: selectedYear[0]
             });
             setFilteredMovies(movies);
         } catch(e) {
@@ -278,6 +282,7 @@ export default function Home() {
         setSelectedLanguages([]);
         setSelectedActors([]);
         setSelectedPlatforms([]);
+        setSelectedYear([new Date().getFullYear()]);
         setIsFilteredView(false);
     }
 
@@ -303,17 +308,30 @@ export default function Home() {
         );
     }
 
-    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0 || selectedPlatforms.length > 0;
+    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0 || selectedPlatforms.length > 0 || selectedYear[0] !== new Date().getFullYear();
 
     return (
         <>
             <div className="mb-8">
                 <h2 className="text-xl font-headline font-bold mb-4 text-primary">Discover Movies</h2>
-                <div className="flex flex-wrap gap-4 items-start">
-                    <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
-                    <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
-                    <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                    <div className="flex flex-wrap gap-2">
+                        <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
+                        <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
+                        <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
+                    </div>
                     <ActorFilter selected={selectedActors} onSelect={handleActorSelect} onRemove={handleActorRemove} />
+                     <div className="space-y-2">
+                        <Label htmlFor="year-slider">Release Year: {selectedYear[0]}</Label>
+                        <Slider 
+                            id="year-slider"
+                            min={1980} 
+                            max={new Date().getFullYear()} 
+                            step={1} 
+                            value={selectedYear}
+                            onValueChange={setSelectedYear}
+                         />
+                    </div>
                 </div>
                  <div className="flex flex-wrap gap-2 mt-4">
                         {selectedGenres.map(g => <Badge key={g.id}>{g.name}</Badge>)}

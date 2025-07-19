@@ -49,6 +49,7 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     let endpoint = '';
+    let params = {};
 
     switch(categoryId) {
         case 'popular':
@@ -63,11 +64,19 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         case 'now_playing':
             endpoint = '/movie/now_playing';
             break;
+        case 'action':
+             endpoint = '/discover/movie';
+             params = { with_genres: '28' };
+             break;
+        case 'comedy':
+             endpoint = '/discover/movie';
+             params = { with_genres: '35' };
+             break;
         default:
              endpoint = '/movie/popular';
     }
 
-    const data = await get<{ results: Movie[] }>(endpoint);
+    const data = await get<{ results: Movie[] }>(endpoint, params);
     return data.results;
 }
 
@@ -131,7 +140,7 @@ export const searchActors = async (query: string): Promise<Actor[]> => {
     return data.results;
 }
 
-export const discoverMovies = async ({ genres, languages, actors, platforms }: { genres: number[], languages: string[], actors: number[], platforms: number[] }): Promise<Movie[]> => {
+export const discoverMovies = async ({ genres, languages, actors, platforms, year }: { genres: number[], languages: string[], actors: number[], platforms: number[], year?: number }): Promise<Movie[]> => {
     const params: Record<string, string> = {
         'watch_region': 'US', // Required for watch provider filtering
     };
@@ -139,6 +148,7 @@ export const discoverMovies = async ({ genres, languages, actors, platforms }: {
     if (languages.length > 0) params.with_original_language = languages.join('|');
     if (actors.length > 0) params.with_cast = actors.join('|');
     if (platforms.length > 0) params.with_watch_providers = platforms.join('|');
+    if (year) params.primary_release_year = String(year);
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);
     return data.results;
