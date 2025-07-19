@@ -1,4 +1,4 @@
-import type { Movie, MovieDetails, Genre } from '@/types';
+import type { Movie, MovieDetails } from '@/types';
 import { sub, format } from 'date-fns';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -92,16 +92,10 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
     return data.results;
 }
 
-export const getGenres = async (): Promise<Genre[]> => {
-    const data = await get<{ genres: Genre[] }>('/genre/movie/list');
-    return data.genres;
-};
-
-export const discoverMovies = async ({ genres, recency }: { genres: number[], recency?: string }): Promise<Movie[]> => {
+export const discoverMovies = async ({ recency }: { recency?: string }): Promise<Movie[]> => {
     const params: Record<string, string> = {
         'watch_region': 'US', // Required for watch provider filtering
     };
-    if (genres.length > 0) params.with_genres = genres.join('|');
     
     if (recency && recency !== 'all') {
         const today = new Date();
@@ -128,10 +122,5 @@ export const discoverMovies = async ({ genres, recency }: { genres: number[], re
     }
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);
-    return data.results;
-}
-
-export const getMoviesByGenre = async (genreId: number): Promise<Movie[]> => {
-    const data = await get<{ results: Movie[] }>('/discover/movie', { with_genres: String(genreId) });
     return data.results;
 }

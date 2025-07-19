@@ -3,17 +3,14 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import type { Movie, Genre } from '@/types';
-import { getMoviesByCategory, getGenres, discoverMovies } from '@/lib/movie-service';
+import type { Movie } from '@/types';
+import { getMoviesByCategory, discoverMovies } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, Check, ChevronsUpDown, X } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const movieCategories = [
@@ -70,60 +67,10 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
     )
 }
 
-function MultiSelectFilter<T extends { id: any, name: string }>({
-    title,
-    options,
-    selected,
-    onToggle,
-}: {
-    title: string,
-    options: T[],
-    selected: T[],
-    onToggle: (item: T) => void
-}) {
-    const [open, setOpen] = React.useState(false);
-    const selectedIds = new Set(selected.map(s => s.id));
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between w-full md:w-auto">
-                    {title}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-                <Command>
-                    <CommandInput placeholder={`Search ${title.toLowerCase()}...`} />
-                    <CommandList>
-                        <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
-                        <CommandGroup>
-                            {options.map((item) => (
-                                <CommandItem
-                                    key={item.id}
-                                    value={item.name}
-                                    onSelect={() => {
-                                      onToggle(item);
-                                    }}
-                                >
-                                    <Check className={`mr-2 h-4 w-4 ${selectedIds.has(item.id) ? "opacity-100" : "opacity-0"}`} />
-                                    {item.name}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
-
 export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
-    const [genres, setGenres] = React.useState<Genre[]>([]);
     
-    const [selectedGenres, setSelectedGenres] = React.useState<Genre[]>([]);
     const [selectedRecency, setSelectedRecency] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
@@ -133,18 +80,15 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedGenres.length > 0 || selectedRecency !== 'all';
+    const hasActiveFilters = selectedRecency !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const [genresData, ...categoryMoviesData] = await Promise.all([
-                    getGenres(),
-                    ...movieCategories.map(category => getMoviesByCategory(category.id)),
-                ]);
-
-                setGenres(genresData);
+                const categoryMoviesData = await Promise.all(
+                    movieCategories.map(category => getMoviesByCategory(category.id))
+                );
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -178,7 +122,6 @@ export default function Home() {
             setIsFilteredView(true);
             try {
                 const movies = await discoverMovies({
-                    genres: selectedGenres.map(g => g.id),
                     recency: selectedRecency
                 });
                 setFilteredMovies(movies);
@@ -199,25 +142,9 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedGenres, selectedRecency, hasActiveFilters])
-
-    const toggleSelection = <T extends {id: any}>(
-        setter: React.Dispatch<React.SetStateAction<T[]>>,
-        item: T
-    ) => {
-        setter(prev => {
-            if (prev.some(p => p.id === item.id)) {
-                return prev.filter(p => p.id !== item.id);
-            } else {
-                return [...prev, item];
-            }
-        });
-    };
-    
-    const handleGenreToggle = (genre: Genre) => toggleSelection(setSelectedGenres, genre);
+    }, [selectedRecency, hasActiveFilters])
 
     const handleClearFilters = () => {
-        setSelectedGenres([]);
         setSelectedRecency('all');
         setIsFilteredView(false);
     }
@@ -244,8 +171,6 @@ export default function Home() {
         );
     }
     
-    const removeGenre = (id: number) => setSelectedGenres(prev => prev.filter(g => g.id !== id));
-
     return (
         <>
             <div className="mb-8">
@@ -254,7 +179,6 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="flex flex-wrap gap-4 items-start">
-                    <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onToggle={handleGenreToggle} />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full md:w-[200px]">
                             <SelectValue placeholder="Recency" />
@@ -268,16 +192,6 @@ export default function Home() {
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="flex flex-wrap gap-2 mt-4">
-                        {selectedGenres.map(g => (
-                            <Badge key={g.id} variant="secondary">
-                                {g.name}
-                                <button onClick={() => removeGenre(g.id)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </Badge>
-                        ))}
-                 </div>
             </div>
 
             {isFilteredView ? (

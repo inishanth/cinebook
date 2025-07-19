@@ -30,8 +30,3 @@ export interface MovieDetails extends Movie {
     }[];
   };
 }
-
-export interface Genre {
-  id: number;
-  name: string;
-}
