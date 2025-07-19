@@ -101,14 +101,14 @@ function MultiSelectCheckboxFilter({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     role="combobox"
                     aria-expanded={open}
                     className={cn("w-full justify-between", className)}
                 >
                     <div className="flex items-center gap-2">
                          {placeholder}
-                         {selectedCount > 0 && <Badge variant="secondary">{selectedCount}</Badge>}
+                         {selectedCount > 0 && <Badge>{selectedCount}</Badge>}
                     </div>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -178,7 +178,7 @@ function SearchableSelectFilter({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="secondary"
             role="combobox"
             aria-expanded={open}
             className={cn("w-full justify-between", className)}
@@ -381,7 +381,7 @@ export default function Home() {
                         placeholder="All Genres"
                     />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full" variant="secondary">
                             <SelectValue placeholder="Recency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -468,5 +468,3 @@ export default function Home() {
         </>
     );
 }
-
-    
