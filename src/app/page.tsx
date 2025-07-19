@@ -10,8 +10,12 @@ import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, ChevronsUpDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+
 
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
@@ -65,6 +69,82 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
     )
 }
 
+function SearchableSelectFilter({ 
+    title, 
+    options, 
+    value, 
+    onValueChange,
+    placeholder,
+    className
+}: { 
+    title: string;
+    options: { id: number | string; name: string }[];
+    value: string;
+    onValueChange: (value: string) => void;
+    placeholder: string;
+    className?: string;
+}) {
+    const [open, setOpen] = React.useState(false);
+  
+    const selectedOption = options.find(opt => String(opt.id) === value);
+  
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn("w-full justify-between", className)}
+          >
+            {selectedOption ? selectedOption.name : placeholder}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+          <Command>
+            <CommandInput placeholder={`Search ${title}...`} />
+            <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
+            <CommandList>
+              <CommandGroup>
+                <CommandItem
+                  key="all"
+                  value="all"
+                  onSelect={() => {
+                    onValueChange('all');
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value === 'all' ? "opacity-100" : "opacity-0")} />
+                  {placeholder}
+                </CommandItem>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.id}
+                    value={option.name}
+                    onSelect={(currentValue) => {
+                      const selectedVal = options.find(opt => opt.name.toLowerCase() === currentValue)?.id
+                      onValueChange(selectedVal ? String(selectedVal) : 'all');
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        String(option.id) === value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
 export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
@@ -114,8 +194,8 @@ export default function Home() {
 
                 setMoviesByCat(moviesData);
                 setAllGenres(genresData);
-                setAllLanguages(languagesData);
-                setAllPlatforms(platformsData);
+                setAllLanguages(languagesData.map(l => ({ id: l.iso_639_1, name: l.english_name })));
+                setAllPlatforms(platformsData.map(p => ({ id: p.provider_id, name: p.provider_name })));
                 setAllActors(actorsData);
                 setError(null);
             } catch (e) {
@@ -207,19 +287,13 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
-                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Genre" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genres</SelectItem>
-                            {allGenres.map(genre => (
-                                <SelectItem key={genre.id} value={String(genre.id)}>
-                                    {genre.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelectFilter 
+                        title="Genres"
+                        options={allGenres}
+                        value={selectedGenre}
+                        onValueChange={setSelectedGenre}
+                        placeholder="All Genres"
+                    />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Recency" />
@@ -232,45 +306,27 @@ export default function Home() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Languages</SelectItem>
-                            {allLanguages.map(lang => (
-                                <SelectItem key={lang.iso_639_1} value={lang.iso_639_1}>
-                                    {lang.english_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Platform" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Platforms</SelectItem>
-                            {allPlatforms.map(platform => (
-                                <SelectItem key={platform.provider_id} value={String(platform.provider_id)}>
-                                    {platform.provider_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Actor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Any Actor</SelectItem>
-                            {allActors.map(actor => (
-                                <SelectItem key={actor.id} value={String(actor.id)}>
-                                    {actor.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                     <SearchableSelectFilter 
+                        title="Languages"
+                        options={allLanguages}
+                        value={selectedLanguage}
+                        onValueChange={setSelectedLanguage}
+                        placeholder="All Languages"
+                    />
+                     <SearchableSelectFilter 
+                        title="Platforms"
+                        options={allPlatforms}
+                        value={selectedPlatform}
+                        onValueChange={setSelectedPlatform}
+                        placeholder="All Platforms"
+                    />
+                    <SearchableSelectFilter 
+                        title="Actors"
+                        options={allActors}
+                        value={selectedActor}
+                        onValueChange={setSelectedActor}
+                        placeholder="Any Actor"
+                    />
                 </div>
             </div>
 
