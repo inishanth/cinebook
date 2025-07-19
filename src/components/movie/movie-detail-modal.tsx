@@ -6,25 +6,16 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetCl
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
-import { ImdbLogo, MetacriticLogo, RottenTomatoesLogo } from '../icons/rating-logos';
-import { NetflixLogo, HuluLogo, PrimeVideoLogo } from '../icons/platform-logos';
+import { ImdbLogo } from '../icons/rating-logos';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, Heart, Clock, Tags, X } from 'lucide-react';
+import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
 
 interface MovieDetailModalProps {
   movie: Movie | null;
   isOpen: boolean;
   onClose: () => void;
 }
-
-// Note: Streaming platform availability is not available from TMDb API.
-// This is kept for demonstration purposes.
-const platformIcons = {
-  netflix: <NetflixLogo className="h-6 w-auto" />,
-  hulu: <HuluLogo className="h-6 w-auto" />,
-  'prime-video': <PrimeVideoLogo className="h-6 w-auto" />,
-};
 
 function DetailSkeleton() {
     return (
@@ -125,16 +116,9 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                     
                     <div className="flex items-center gap-4 flex-wrap border-y border-white/10 py-4">
                         <div className="flex items-center gap-2">
-                            <ImdbLogo className="h-6 w-auto" />
-                            <Badge variant="secondary" className="text-lg bg-amber-400 text-black">{movie.vote_average.toFixed(1)}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <RottenTomatoesLogo className="h-6 w-auto" />
-                            <Badge variant="secondary" className="text-lg bg-red-600 text-white">N/A</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <MetacriticLogo className="h-6 w-auto" />
-                            <Badge variant="secondary" className="text-lg bg-yellow-400 text-black">N/A</Badge>
+                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
+                           <span className="text-lg font-bold">TMDb Score:</span>
+                           <Badge variant="secondary" className="text-lg bg-amber-400 text-black">{movie.vote_average.toFixed(1)}</Badge>
                         </div>
                     </div>
 
