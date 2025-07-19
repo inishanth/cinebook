@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -10,11 +11,13 @@ import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, Check, ChevronsUpDown } from 'lucide-react';
+import { ArrowLeft, Check, ChevronsUpDown, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 
 
 const movieCategories = [
@@ -67,6 +70,97 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
             )}
         </motion.div>
     )
+}
+
+function MultiSelectCheckboxFilter({
+    title,
+    options,
+    selectedValues,
+    onSelectedValuesChange,
+    placeholder,
+    className
+}: {
+    title: string;
+    options: { id: number | string; name: string }[];
+    selectedValues: number[];
+    onSelectedValuesChange: (values: number[]) => void;
+    placeholder: string;
+    className?: string;
+}) {
+    const [open, setOpen] = React.useState(false);
+    const [search, setSearch] = React.useState('');
+
+    const handleToggle = (id: number) => {
+        const newSelected = selectedValues.includes(id)
+            ? selectedValues.filter(v => v !== id)
+            : [...selectedValues, id];
+        onSelectedValuesChange(newSelected);
+    };
+    
+    const filteredOptions = options.filter(option => option.name.toLowerCase().includes(search.toLowerCase()));
+    
+    const selectedCount = selectedValues.length;
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className={cn("w-full justify-between", className)}
+                >
+                    <div className="flex items-center gap-2">
+                         {placeholder}
+                         {selectedCount > 0 && <Badge variant="secondary">{selectedCount}</Badge>}
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput 
+                        placeholder={`Search ${title}...`}
+                        value={search}
+                        onValueChange={setSearch}
+                    />
+                    <CommandEmpty>No {title.toLowerCase()} found.</CommandEmpty>
+                    <CommandList>
+                        <CommandGroup>
+                            {filteredOptions.map((option) => (
+                                <CommandItem
+                                    key={option.id}
+                                    onSelect={() => handleToggle(Number(option.id))}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Checkbox
+                                        id={`genre-${option.id}`}
+                                        checked={selectedValues.includes(Number(option.id))}
+                                        onCheckedChange={() => handleToggle(Number(option.id))}
+                                    />
+                                    <label htmlFor={`genre-${option.id}`} className="cursor-pointer flex-1">
+                                      {option.name}
+                                    </label>
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+                {selectedCount > 0 && (
+                    <div className="p-2 border-t">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => onSelectedValuesChange([])}
+                        >
+                           Clear selected
+                        </Button>
+                    </div>
+                )}
+            </PopoverContent>
+        </Popover>
+    );
 }
 
 function SearchableSelectFilter({ 
@@ -154,7 +248,7 @@ export default function Home() {
     const [allPlatforms, setAllPlatforms] = React.useState<Platform[]>([]);
     const [allActors, setAllActors] = React.useState<Actor[]>([]);
 
-    const [selectedGenre, setSelectedGenre] = React.useState('all');
+    const [selectedGenres, setSelectedGenres] = React.useState<number[]>([]);
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
     const [selectedPlatform, setSelectedPlatform] = React.useState('all');
     const [selectedActor, setSelectedActor] = React.useState('all');
@@ -167,7 +261,7 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedRecency !== 'all' || selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedPlatform !== 'all' || selectedActor !== 'all';
+    const hasActiveFilters = selectedRecency !== 'all' || selectedGenres.length > 0 || selectedLanguage !== 'all' || selectedPlatform !== 'all' || selectedActor !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
@@ -224,7 +318,7 @@ export default function Home() {
             try {
                 const movies = await discoverMovies({
                     recency: selectedRecency,
-                    genreId: selectedGenre,
+                    genreIds: selectedGenres,
                     language: selectedLanguage,
                     platformId: selectedPlatform,
                     actorId: selectedActor,
@@ -246,11 +340,11 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedRecency, selectedGenre, selectedLanguage, selectedPlatform, selectedActor, hasActiveFilters])
+    }, [selectedRecency, selectedGenres, selectedLanguage, selectedPlatform, selectedActor, hasActiveFilters])
 
     const handleClearFilters = () => {
         setSelectedRecency('all');
-        setSelectedGenre('all');
+        setSelectedGenres([]);
         setSelectedLanguage('all');
         setSelectedPlatform('all');
         setSelectedActor('all');
@@ -287,11 +381,11 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
-                    <SearchableSelectFilter 
+                    <MultiSelectCheckboxFilter
                         title="Genres"
                         options={allGenres}
-                        value={selectedGenre}
-                        onValueChange={setSelectedGenre}
+                        selectedValues={selectedGenres}
+                        onSelectedValuesChange={setSelectedGenres}
                         placeholder="All Genres"
                     />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
