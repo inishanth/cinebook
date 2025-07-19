@@ -137,6 +137,7 @@ function MultiSelectCheckboxFilter({
                                         id={`genre-${option.id}`}
                                         checked={selectedValues.includes(Number(option.id))}
                                         onCheckedChange={() => handleToggle(Number(option.id))}
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                     <label htmlFor={`genre-${option.id}`} className="cursor-pointer flex-1">
                                       {option.name}
