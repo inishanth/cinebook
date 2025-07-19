@@ -1,15 +1,8 @@
-import type { Movie, MovieDetails, Genre } from '@/types';
+import type { Movie, MovieDetails, Genre, Actor, Language } from '@/types';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
-
-// Genre IDs from TMDb
-const GENRE_IDS = {
-    action: 28,
-    comedy: 35,
-    // Add more genres here if needed
-};
 
 const get = async <T>(path: string, params: Record<string, string> = {}): Promise<T> => {
   if (!API_KEY) {
@@ -56,7 +49,6 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     let endpoint = '';
-    let params = {};
 
     switch(categoryId) {
         case 'popular':
@@ -71,16 +63,11 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         case 'now_playing':
             endpoint = '/movie/now_playing';
             break;
-        case 'action':
-        case 'comedy':
-            endpoint = '/discover/movie';
-            params = { with_genres: String(GENRE_IDS[categoryId as keyof typeof GENRE_IDS]) };
-            break;
         default:
-            endpoint = '/movie/popular';
+             endpoint = '/movie/popular';
     }
 
-    const data = await get<{ results: Movie[] }>(endpoint, params);
+    const data = await get<{ results: Movie[] }>(endpoint);
     return data.results;
 }
 
@@ -99,6 +86,27 @@ export const getGenres = async (): Promise<Genre[]> => {
     const data = await get<{ genres: Genre[] }>('/genre/movie/list');
     return data.genres;
 };
+
+export const getLanguages = async (): Promise<Language[]> => {
+    const data = await get<Language[]>('/configuration/languages');
+    return data.filter(lang => lang.english_name); // Filter out languages without an english name
+};
+
+export const searchActors = async (query: string): Promise<Actor[]> => {
+    if (!query) return [];
+    const data = await get<{ results: Actor[] }>('/search/person', { query });
+    return data.results;
+}
+
+export const discoverMovies = async ({ genres, languages, actors }: { genres: number[], languages: string[], actors: number[] }): Promise<Movie[]> => {
+    const params: Record<string, string> = {};
+    if (genres.length > 0) params.with_genres = genres.join(',');
+    if (languages.length > 0) params.with_original_language = languages.join(',');
+    if (actors.length > 0) params.with_cast = actors.join(',');
+    
+    const data = await get<{ results: Movie[] }>('/discover/movie', params);
+    return data.results;
+}
 
 export const getMoviesByGenre = async (genreId: number): Promise<Movie[]> => {
     const data = await get<{ results: Movie[] }>('/discover/movie', { with_genres: String(genreId) });
