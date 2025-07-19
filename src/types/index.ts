@@ -14,6 +14,24 @@ export interface Genre {
   name: string;
 }
 
+export interface Language {
+    iso_639_1: string;
+    english_name: string;
+    name: string;
+}
+
+export interface Platform {
+    provider_id: number;
+    provider_name: string;
+    logo_path: string;
+}
+
+export interface Actor {
+    id: number;
+    name: string;
+    profile_path: string | null;
+}
+
 export interface MovieDetails extends Movie {
   genres: { id: number; name: string }[];
   runtime: number;

@@ -1,4 +1,4 @@
-import type { Movie, MovieDetails, Genre } from '@/types';
+import type { Movie, MovieDetails, Genre, Language, Platform, Actor } from '@/types';
 import { sub, format } from 'date-fns';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -78,6 +78,31 @@ export const getGenres = async (): Promise<Genre[]> => {
   return data.genres;
 };
 
+export const getLanguages = async (): Promise<Language[]> => {
+    const data = await get<Language[]>('/configuration/languages');
+    return data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+};
+
+export const getPlatforms = async (): Promise<Platform[]> => {
+    const data = await get<{ results: Platform[] }>('/watch/providers/movie', { watch_region: 'US' });
+    // A curated list of popular platforms
+    const popularPlatformIds = new Set([
+        8, // Netflix
+        9, // Amazon Prime Video
+        15, // Hulu
+        337, // Disney Plus
+        384, // HBO Max -> Max
+        257, // Apple TV
+        350, // Peacock
+        531, // Paramount+
+    ]);
+    return data.results.filter(p => popularPlatformIds.has(p.provider_id)).sort((a,b) => a.provider_name.localeCompare(b.provider_name));
+};
+
+export const getPopularActors = async (): Promise<Actor[]> => {
+    const data = await get<{ results: Actor[] }>('/person/popular');
+    return data.results;
+};
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
     return get<MovieDetails>(`/movie/${movieId}`, { append_to_response: 'videos,credits,release_dates' });
@@ -89,7 +114,19 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
     return data.results;
 }
 
-export const discoverMovies = async ({ recency, genreId }: { recency?: string, genreId?: string }): Promise<Movie[]> => {
+export const discoverMovies = async ({
+    recency,
+    genreId,
+    language,
+    platformId,
+    actorId,
+}: {
+    recency?: string,
+    genreId?: string,
+    language?: string,
+    platformId?: string,
+    actorId?: string,
+}): Promise<Movie[]> => {
     const params: Record<string, string> = {
         'watch_region': 'US',
     };
@@ -120,6 +157,18 @@ export const discoverMovies = async ({ recency, genreId }: { recency?: string, g
     
     if (genreId && genreId !== 'all') {
         params.with_genres = genreId;
+    }
+
+    if (language && language !== 'all') {
+        params.with_original_language = language;
+    }
+
+    if (platformId && platformId !== 'all') {
+        params.with_watch_providers = platformId;
+    }
+
+    if (actorId && actorId !== 'all') {
+        params.with_cast = actorId;
     }
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);
