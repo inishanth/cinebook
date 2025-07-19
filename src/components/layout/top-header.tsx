@@ -112,7 +112,7 @@ function SearchDialog() {
                   onClick={() => handleMovieClick(movie)}
                 >
                   <Image
-                    src={getPosterUrl(movie.poster_path, 'w500')}
+                    src={getPosterUrl(movie.poster_path, 'w92')}
                     alt={movie.title}
                     width={40}
                     height={60}

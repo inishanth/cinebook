@@ -35,7 +35,7 @@ const get = async <T>(path: string, params: Record<string, string> = {}): Promis
   }
 };
 
-export const getPosterUrl = (path: string | null, size: 'w500' | 'original' = 'w500') => {
+export const getPosterUrl = (path: string | null, size: 'w92' | 'w500' | 'original' = 'w500') => {
   return path ? `${IMAGE_BASE_URL}${size}${path}` : 'https://placehold.co/500x750.png';
 };
 
