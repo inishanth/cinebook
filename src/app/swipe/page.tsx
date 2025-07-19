@@ -2,15 +2,16 @@
 
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, Undo } from 'lucide-react';
-import { movies as allMovies } from '@/data/movies';
+import { Heart, X, Undo, Film } from 'lucide-react';
+import { getTrendingMovies, getPosterUrl } from '@/lib/movie-service';
 import type { Movie } from '@/types';
 import { useWatchlist } from '@/context/watchlist-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
-import { ImdbLogo, RottenTomatoesLogo } from '@/components/icons/rating-logos';
+import { ImdbLogo } from '@/components/icons/rating-logos';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SwipeCard = ({
   movie,
@@ -42,12 +43,14 @@ const SwipeCard = ({
       onDragEnd={(event, { offset }) => {
         const swipeThreshold = 80;
         const tapThreshold = 5;
+        if (Math.abs(offset.x) < tapThreshold && Math.abs(offset.y) < tapThreshold) {
+          onCardTap();
+          return;
+        }
         if (offset.x > swipeThreshold) {
           onSwipe('right');
         } else if (offset.x < -swipeThreshold) {
           onSwipe('left');
-        } else if (Math.abs(offset.x) < tapThreshold && Math.abs(offset.y) < tapThreshold) {
-          onCardTap();
         }
       }}
       variants={cardVariants}
@@ -58,26 +61,22 @@ const SwipeCard = ({
     >
       <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] overflow-hidden shadow-2xl bg-secondary relative">
         <Image
-          src={movie.posterUrl}
+          src={getPosterUrl(movie.poster_path)}
           alt={movie.title}
           fill
           className="object-cover"
           draggable="false"
-          data-ai-hint={movie['data-ai-hint']}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
         <CardContent className="absolute bottom-0 left-0 p-4 text-white w-full">
           <h3 className="text-2xl font-headline font-bold">{movie.title}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{movie.summary}</p>
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{movie.overview}</p>
           <div className="flex items-center justify-between mt-4 border-t border-white/20 pt-2">
             <div className="flex items-center gap-2">
               <ImdbLogo className="h-5 w-auto" />
-              <span className="font-bold text-sm">{movie.ratings.imdb}</span>
+              <span className="font-bold text-sm">{movie.vote_average.toFixed(1)}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <RottenTomatoesLogo className="h-5 w-auto" />
-              <span className="font-bold text-sm">{movie.ratings.rottenTomatoes}%</span>
-            </div>
+            {/* Other ratings can go here if available */}
           </div>
         </CardContent>
       </Card>
@@ -89,9 +88,36 @@ const SwipeCard = ({
 export default function SwipePage() {
   const { watchlist, rejected, addToWatchlist, rejectMovie } = useWatchlist();
   const [movieStack, setMovieStack] = React.useState<Movie[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
   const [lastAction, setLastAction] = React.useState<{type: 'like' | 'reject', movie: Movie} | null>(null);
   const [swipeDirection, setSwipeDirection] = React.useState<'left' | 'right' | null>(null);
   const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
+
+  React.useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        setLoading(true);
+        const trendingMovies = await getTrendingMovies();
+        const watchlistIds = watchlist.map((m) => m.id);
+        const filteredMovies = trendingMovies.filter(
+          (m) => !watchlistIds.includes(m.id) && !rejected.includes(m.id)
+        );
+        setMovieStack(filteredMovies.reverse());
+        setError(null);
+      } catch (e) {
+         if (e instanceof Error) {
+            setError(e.message);
+        } else {
+            setError('An unknown error occurred.');
+        }
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMovies();
+  }, [watchlist, rejected]);
 
   const handleOpenModal = (movie: Movie) => {
     setSelectedMovie(movie);
@@ -100,14 +126,6 @@ export default function SwipePage() {
   const handleCloseModal = () => {
     setSelectedMovie(null);
   };
-
-  React.useEffect(() => {
-    const watchlistIds = watchlist.map((m) => m.id);
-    const filteredMovies = allMovies.filter(
-      (m) => !watchlistIds.includes(m.id) && !rejected.includes(m.id)
-    );
-    setMovieStack(filteredMovies.reverse());
-  }, [watchlist, rejected]);
 
   const handleSwipe = (direction: 'left' | 'right') => {
     if (movieStack.length === 0) return;
@@ -123,17 +141,16 @@ export default function SwipePage() {
       setLastAction({ type: 'reject', movie });
     }
 
-    // Set a timeout to remove the card from the stack, allowing the exit animation to complete.
     setTimeout(() => {
         setMovieStack((prev) => prev.slice(0, prev.length - 1));
+        setSwipeDirection(null);
     }, 300);
   };
   
-  // This undo functionality is a bit basic and won't be persisted.
-  // It's here for UX demonstration.
   const handleUndo = () => {
     if (!lastAction) return;
 
+    // This undo functionality is a bit basic and won't be persisted.
     if (lastAction.type === 'like') {
         // This is a simplification; ideally, we'd remove from watchlist
     } else {
@@ -147,21 +164,26 @@ export default function SwipePage() {
     <div className="flex flex-col items-center justify-center h-full space-y-8">
       <div className="relative w-[350px] h-[525px] flex items-center justify-center">
         <AnimatePresence custom={swipeDirection}>
-          {movieStack.length > 0 ? (
+          {loading ? (
+             <Skeleton className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] rounded-2xl" />
+          ) : error ? (
+            <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] flex flex-col items-center justify-center bg-secondary text-center p-4">
+                <h3 className="text-xl font-headline text-destructive">Error Loading Movies</h3>
+                <p className="text-muted-foreground mt-2">{error}</p>
+            </Card>
+          ) : movieStack.length > 0 ? (
             movieStack.map((movie, index) => (
               <SwipeCard
                 key={movie.id}
                 movie={movie}
-                onSwipe={(dir) => {
-                    setSwipeDirection(dir);
-                    handleSwipe(dir);
-                }}
+                onSwipe={(dir) => handleSwipe(dir)}
                 onCardTap={() => handleOpenModal(movie)}
                 active={index === movieStack.length - 1}
               />
             ))
           ) : (
             <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] flex flex-col items-center justify-center bg-secondary text-center p-4">
+              <Film className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-2xl font-headline">All Caught Up!</h3>
               <p className="text-muted-foreground mt-2">You've swiped through all available movies. Check back later for more!</p>
             </Card>
@@ -175,6 +197,7 @@ export default function SwipePage() {
           size="icon"
           className="w-16 h-16 rounded-full border-2 border-amber-500 text-amber-500 hover:bg-amber-500/10"
           onClick={() => handleSwipe('left')}
+          disabled={loading || movieStack.length === 0}
         >
           <X className="w-8 h-8" />
         </Button>
@@ -192,6 +215,7 @@ export default function SwipePage() {
           size="icon"
           className="w-16 h-16 rounded-full border-2 border-primary text-primary hover:bg-primary/10"
           onClick={() => handleSwipe('right')}
+          disabled={loading || movieStack.length === 0}
         >
           <Heart className="w-8 h-8" />
         </Button>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { XCircle } from 'lucide-react';
+import { getPosterUrl } from '@/lib/movie-service';
 
 export default function SettingsPage() {
   const { watchlist, removeFromWatchlist } = useWatchlist();
@@ -33,12 +34,11 @@ export default function SettingsPage() {
                   {watchlist.map((movie) => (
                     <div key={movie.id} className="relative group">
                       <Image
-                        src={movie.posterUrl}
+                        src={getPosterUrl(movie.poster_path)}
                         alt={`Poster for ${movie.title}`}
                         width={200}
                         height={300}
                         className="rounded-md w-full"
-                        data-ai-hint={movie['data-ai-hint']}
                       />
                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 text-center">
                         <p className="text-white font-bold">{movie.title}</p>

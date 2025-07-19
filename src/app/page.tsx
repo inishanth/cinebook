@@ -2,13 +2,62 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { movies as allMovies } from '@/data/movies';
 import type { Movie } from '@/types';
+import { getMoviesByCategory } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const movieCategories = [
+    { id: 'popular', title: 'Popular' },
+    { id: 'top_rated', title: 'Top Rated' },
+    { id: 'upcoming', title: 'Upcoming' },
+    { id: 'now_playing', title: 'Now Playing' },
+];
+
+function CategoryRowSkeleton() {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-7 w-48" />
+            <div className="flex space-x-4">
+                {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="w-32 h-48 md:w-40 md:h-60" />
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export default function Home() {
   const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
+  const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchAllMovies = async () => {
+      try {
+        setLoading(true);
+        const allMoviesData: Record<string, Movie[]> = {};
+        for (const category of movieCategories) {
+          const movies = await getMoviesByCategory(category.id);
+          allMoviesData[category.title] = movies;
+        }
+        setMoviesByCat(allMoviesData);
+        setError(null);
+      } catch (e) {
+        if (e instanceof Error) {
+            setError(e.message);
+        } else {
+            setError('An unknown error occurred.');
+        }
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAllMovies();
+  }, []);
 
   const handleOpenModal = (movie: Movie) => {
     setSelectedMovie(movie);
@@ -17,19 +66,6 @@ export default function Home() {
   const handleCloseModal = () => {
     setSelectedMovie(null);
   };
-
-  const categorizedMovies = React.useMemo(() => {
-    const categories: { [key: string]: Movie[] } = {};
-    allMovies.forEach((movie) => {
-      if (!categories[movie.category]) {
-        categories[movie.category] = [];
-      }
-      categories[movie.category].push(movie);
-    });
-    return categories;
-  }, []);
-
-  const categories = Object.keys(categorizedMovies);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -53,28 +89,44 @@ export default function Home() {
     },
   };
 
+  if (error) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center">
+            <h2 className="text-2xl font-bold text-destructive mb-4">Oops! Something went wrong.</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <p className="text-sm text-muted-foreground">Please make sure you have added your TMDb API key to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
+        </div>
+    );
+  }
+
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-col space-y-12"
-    >
-      {categories.map((category) => (
-        <motion.div key={category} variants={itemVariants}>
-          <MovieCategoryRow
-            title={category}
-            movies={categorizedMovies[category]}
-            onMovieClick={handleOpenModal}
-          />
-        </motion.div>
-      ))}
+    <>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col space-y-12"
+      >
+        {loading ? (
+            [...Array(4)].map((_, i) => <CategoryRowSkeleton key={i} />)
+        ) : (
+            Object.entries(moviesByCat).map(([title, movies]) => (
+                <motion.div key={title} variants={itemVariants}>
+                    <MovieCategoryRow
+                        title={title}
+                        movies={movies}
+                        onMovieClick={handleOpenModal}
+                    />
+                </motion.div>
+            ))
+        )}
+      </motion.div>
 
       <MovieDetailModal
         movie={selectedMovie}
         isOpen={!!selectedMovie}
         onClose={handleCloseModal}
       />
-    </motion.div>
+    </>
   );
 }

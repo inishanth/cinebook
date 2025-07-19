@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, User } from 'lucide-react';
+import { Search, User, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -14,27 +14,43 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { movies } from '@/data/movies';
+import { searchMovies, getPosterUrl } from '@/lib/movie-service';
 import type { Movie } from '@/types';
 import Image from 'next/image';
 import { MovieDetailModal } from '../movie/movie-detail-modal';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '../ui/skeleton';
 
 function SearchDialog() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [results, setResults] = React.useState<Movie[]>([]);
+  const [loading, setLoading] = React.useState(false);
   const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (searchQuery.length > 2) {
-      const filteredMovies = movies.filter((movie) =>
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setResults(filteredMovies);
+  React.useEffect(() => {
+    if (searchQuery.trim().length > 2) {
+      setLoading(true);
+      const timer = setTimeout(async () => {
+        try {
+          const movies = await searchMovies(searchQuery);
+          setResults(movies);
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Search Failed",
+            description: "Could not fetch movie results. Please check your API key and try again.",
+          });
+        } finally {
+            setLoading(false);
+        }
+      }, 500); // Debounce API calls
+      return () => clearTimeout(timer);
     } else {
       setResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, toast]);
   
   const handleMovieClick = (movie: Movie) => {
     setSelectedMovie(movie);
@@ -77,8 +93,15 @@ function SearchDialog() {
             className="col-span-3"
           />
         </div>
-        <div className="max-h-80 overflow-y-auto">
-          {results.length > 0 ? (
+        <div className="max-h-80 overflow-y-auto space-y-2">
+            {loading ? (
+                 [...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4 p-2">
+                        <Skeleton className="w-10 h-16 rounded-md" />
+                        <Skeleton className="h-6 flex-1" />
+                    </div>
+                ))
+            ) : results.length > 0 ? (
             <ul className="space-y-4">
               {results.map((movie) => (
                 <li
@@ -87,12 +110,11 @@ function SearchDialog() {
                   onClick={() => handleMovieClick(movie)}
                 >
                   <Image
-                    src={movie.posterUrl}
+                    src={getPosterUrl(movie.poster_path, 'w500')}
                     alt={movie.title}
                     width={40}
                     height={60}
                     className="rounded-md"
-                    data-ai-hint={movie['data-ai-hint']}
                   />
                   <span className="font-medium">{movie.title}</span>
                 </li>
@@ -131,7 +153,10 @@ export function TopHeader() {
             )}>
             <div className="container flex h-16 items-center justify-between">
                 <SearchDialog />
-                <h1 className="text-2xl font-headline text-primary">ReelDeal</h1>
+                <div className="flex items-center gap-2">
+                    <Film className="h-8 w-8 text-primary" />
+                    <h1 className="text-2xl font-headline text-primary">ReelDeal</h1>
+                </div>
                 <Button variant="ghost" size="icon">
                     <User className="h-6 w-6" />
                     <span className="sr-only">Profile</span>

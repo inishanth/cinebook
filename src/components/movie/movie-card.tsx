@@ -3,6 +3,7 @@ import type { Movie } from '@/types';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
+import { getPosterUrl } from '@/lib/movie-service';
 
 interface MovieCardProps {
   movie: Movie;
@@ -19,17 +20,16 @@ export function MovieCard({ movie, onClick }: MovieCardProps) {
     >
       <div className="rounded-lg overflow-hidden shadow-lg bg-secondary">
         <Image
-          src={movie.posterUrl}
+          src={getPosterUrl(movie.poster_path)}
           alt={`Poster for ${movie.title}`}
           width={500}
           height={750}
           className="w-full h-auto"
-          data-ai-hint={movie['data-ai-hint']}
         />
       </div>
       <Badge variant="secondary" className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 border-none">
         <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-        <span className="font-bold text-xs">{movie.ratings.imdb}</span>
+        <span className="font-bold text-xs">{movie.vote_average.toFixed(1)}</span>
       </Badge>
     </motion.div>
   );
