@@ -91,6 +91,8 @@ export const getPlatforms = async (): Promise<Platform[]> => {
         9, // Amazon Prime Video
         15, // Hulu
         337, // Disney Plus
+        122, // Hotstar
+        220, // JioCinema
         384, // HBO Max -> Max
         257, // Apple TV
         350, // Peacock
