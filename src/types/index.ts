@@ -37,6 +37,7 @@ export interface Genre {
 }
 
 export interface Language {
+  id: string; // Using iso_639_1 as the unique ID
   iso_639_1: string;
   english_name: string;
   name: string;

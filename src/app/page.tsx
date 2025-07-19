@@ -285,14 +285,7 @@ export default function Home() {
     };
     
     const handleGenreSelect = (genre: Genre) => setSelectedGenres(prev => toggleSelection(prev, genre));
-    const handleLanguageSelect = (language: Language) => {
-        setSelectedLanguages(prev => {
-            if (prev.some(l => l.iso_639_1 === language.iso_639_1)) {
-                return prev.filter(l => l.iso_639_1 !== language.iso_639_1);
-            }
-            return [...prev, language];
-        });
-    };
+    const handleLanguageSelect = (language: Language) => setSelectedLanguages(prev => toggleSelection(prev, language));
     const handlePlatformSelect = (platform: WatchProvider) => setSelectedPlatforms(prev => toggleSelection(prev, platform));
     const handleActorSelect = (actor: Actor) => {
         if (!selectedActors.some(a => a.id === actor.id)) {
@@ -333,7 +326,7 @@ export default function Home() {
     }
     
     const removeGenre = (id: number) => setSelectedGenres(prev => prev.filter(g => g.id !== id));
-    const removeLanguage = (iso: string) => setSelectedLanguages(prev => prev.filter(l => l.iso_639_1 !== iso));
+    const removeLanguage = (id: string) => setSelectedLanguages(prev => prev.filter(l => l.iso_639_1 !== id));
     const removePlatform = (id: number) => setSelectedPlatforms(prev => prev.filter(p => p.id !== id));
 
     return (
@@ -345,7 +338,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-wrap gap-4 items-start">
                     <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
-                    <MultiSelectFilter title="Languages" options={languages.map(l => ({...l, id: l.iso_639_1, name: l.english_name}))} selected={selectedLanguages.map(l => ({...l, id: l.iso_639_1, name: l.english_name}))} onSelect={handleLanguageSelect} />
+                    <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
                     <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
                     <ActorFilter selected={selectedActors} onSelect={handleActorSelect} onRemove={handleActorRemove} />
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>

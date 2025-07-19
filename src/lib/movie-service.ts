@@ -99,7 +99,7 @@ export const getGenres = async (): Promise<Genre[]> => {
 
 export const getLanguages = async (): Promise<Language[]> => {
     // Return a curated list of languages to avoid overwhelming the user.
-    const curatedLanguages: Omit<Language, 'name'>[] = [
+    const curatedLanguages: Omit<Language, 'name' | 'id'>[] = [
         { iso_639_1: 'en', english_name: 'English' },
         { iso_639_1: 'es', english_name: 'Spanish' },
         { iso_639_1: 'fr', english_name: 'French' },
@@ -120,7 +120,7 @@ export const getLanguages = async (): Promise<Language[]> => {
         { iso_639_1: 'ar', english_name: 'Arabic' },
         { iso_639_1: 'tr', english_name: 'Turkish' },
     ];
-    return Promise.resolve(curatedLanguages.map(l => ({ ...l, name: l.english_name })));
+    return Promise.resolve(curatedLanguages.map(l => ({ ...l, id: l.iso_639_1, name: l.english_name })));
 };
 
 export const getPlatforms = async (): Promise<WatchProvider[]> => {
