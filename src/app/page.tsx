@@ -35,7 +35,7 @@ function CategoryRowSkeleton() {
 
 function GenreList({ genres, onGenreSelect }: { genres: Genre[], onGenreSelect: (genre: Genre) => void }) {
     return (
-        <div className="my-8">
+        <div className="mb-8">
             <h2 className="text-xl font-headline font-bold mb-4 text-primary">Filter by Genre</h2>
             <div className="flex flex-wrap gap-2">
                 {genres.map(genre => (
@@ -197,9 +197,15 @@ export default function Home() {
             className="flex flex-col space-y-12"
         >
             {loading ? (
-                movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)
+                <>
+                    <Skeleton className="h-24 w-full" /> 
+                    {movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)}
+                </>
             ) : (
                 <>
+                    <motion.div variants={itemVariants}>
+                        <GenreList genres={genres} onGenreSelect={handleSelectGenre} />
+                    </motion.div>
                     {movieCategories.map((cat) => (
                         moviesByCat[cat.title] && moviesByCat[cat.title].length > 0 && (
                             <motion.div key={cat.title} variants={itemVariants}>
@@ -211,9 +217,6 @@ export default function Home() {
                             </motion.div>
                         )
                     ))}
-                    <motion.div variants={itemVariants}>
-                        <GenreList genres={genres} onGenreSelect={handleSelectGenre} />
-                    </motion.div>
                 </>
             )}
         </motion.div>
