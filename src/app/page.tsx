@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import type { Movie, Genre, Actor, Language } from '@/types';
-import { getMoviesByCategory, getGenres, discoverMovies, searchActors, getLanguages } from '@/lib/movie-service';
+import type { Movie, Genre, Actor, Language, WatchProvider } from '@/types';
+import { getMoviesByCategory, getGenres, discoverMovies, searchActors, getLanguages, getPlatforms } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -181,10 +181,12 @@ export default function Home() {
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
     const [genres, setGenres] = React.useState<Genre[]>([]);
     const [languages, setLanguages] = React.useState<Language[]>([]);
+    const [platforms, setPlatforms] = React.useState<WatchProvider[]>([]);
     
     const [selectedGenres, setSelectedGenres] = React.useState<Genre[]>([]);
     const [selectedLanguages, setSelectedLanguages] = React.useState<Language[]>([]);
     const [selectedActors, setSelectedActors] = React.useState<Actor[]>([]);
+    const [selectedPlatforms, setSelectedPlatforms] = React.useState<WatchProvider[]>([]);
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
     const [isFilteredView, setIsFilteredView] = React.useState(false);
@@ -197,14 +199,16 @@ export default function Home() {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const [genresData, languagesData, ...categoryMoviesData] = await Promise.all([
+                const [genresData, languagesData, platformsData, ...categoryMoviesData] = await Promise.all([
                     getGenres(),
                     getLanguages(),
+                    getPlatforms(),
                     ...movieCategories.map(category => getMoviesByCategory(category.id)),
                 ]);
 
                 setGenres(genresData);
                 setLanguages(languagesData);
+                setPlatforms(platformsData);
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -237,6 +241,7 @@ export default function Home() {
     
     const handleGenreSelect = (genre: Genre) => setSelectedGenres(prev => toggleSelection(prev, genre));
     const handleLanguageSelect = (language: Language) => setSelectedLanguages(prev => toggleSelection(prev, language));
+    const handlePlatformSelect = (platform: WatchProvider) => setSelectedPlatforms(prev => toggleSelection(prev, platform));
     const handleActorSelect = (actor: Actor) => {
         if (!selectedActors.some(a => a.id === actor.id)) {
             setSelectedActors(prev => [...prev, actor]);
@@ -245,7 +250,7 @@ export default function Home() {
     const handleActorRemove = (actorId: number) => setSelectedActors(prev => prev.filter(a => a.id !== actorId));
 
     const handleApplyFilters = async () => {
-        if (selectedGenres.length === 0 && selectedLanguages.length === 0 && selectedActors.length === 0) {
+        if (selectedGenres.length === 0 && selectedLanguages.length === 0 && selectedActors.length === 0 && selectedPlatforms.length === 0) {
             setIsFilteredView(false);
             return;
         }
@@ -257,6 +262,7 @@ export default function Home() {
                 genres: selectedGenres.map(g => g.id),
                 languages: selectedLanguages.map(l => l.iso_639_1),
                 actors: selectedActors.map(a => a.id),
+                platforms: selectedPlatforms.map(p => p.id),
             });
             setFilteredMovies(movies);
         } catch(e) {
@@ -271,6 +277,7 @@ export default function Home() {
         setSelectedGenres([]);
         setSelectedLanguages([]);
         setSelectedActors([]);
+        setSelectedPlatforms([]);
         setIsFilteredView(false);
     }
 
@@ -296,7 +303,7 @@ export default function Home() {
         );
     }
 
-    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0;
+    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0 || selectedPlatforms.length > 0;
 
     return (
         <>
@@ -305,11 +312,13 @@ export default function Home() {
                 <div className="flex flex-wrap gap-4 items-start">
                     <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
                     <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
+                    <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
                     <ActorFilter selected={selectedActors} onSelect={handleActorSelect} onRemove={handleActorRemove} />
                 </div>
                  <div className="flex flex-wrap gap-2 mt-4">
                         {selectedGenres.map(g => <Badge key={g.id}>{g.name}</Badge>)}
                         {selectedLanguages.map(l => <Badge key={l.iso_639_1}>{l.english_name}</Badge>)}
+                        {selectedPlatforms.map(p => <Badge key={p.id}>{p.name}</Badge>)}
                  </div>
                 <div className="flex gap-4 mt-4">
                     <Button onClick={handleApplyFilters} disabled={!hasActiveFilters}>Apply Filters</Button>

@@ -47,3 +47,8 @@ export interface Actor {
   name: string;
   profile_path: string | null;
 }
+
+export interface WatchProvider {
+  id: number;
+  name: string;
+}

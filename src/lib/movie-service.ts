@@ -1,4 +1,4 @@
-import type { Movie, MovieDetails, Genre, Actor, Language } from '@/types';
+import type { Movie, MovieDetails, Genre, Actor, Language, WatchProvider } from '@/types';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const API_BASE_URL = 'https://api.themoviedb.org/3';
@@ -113,17 +113,32 @@ export const getLanguages = async (): Promise<Language[]> => {
     return Promise.resolve(curatedLanguages.map(l => ({ ...l, name: l.english_name })));
 };
 
+export const getPlatforms = async (): Promise<WatchProvider[]> => {
+    const popularPlatforms: WatchProvider[] = [
+        { id: 8, name: 'Netflix' },
+        { id: 9, name: 'Prime Video' },
+        { id: 15, name: 'Hulu' },
+        { id: 337, name: 'Disney+' },
+        { id: 384, name: 'Max' },
+        { id: 350, name: 'Apple TV+' },
+    ];
+    return Promise.resolve(popularPlatforms);
+}
+
 export const searchActors = async (query: string): Promise<Actor[]> => {
     if (!query) return [];
     const data = await get<{ results: Actor[] }>('/search/person', { query });
     return data.results;
 }
 
-export const discoverMovies = async ({ genres, languages, actors }: { genres: number[], languages: string[], actors: number[] }): Promise<Movie[]> => {
-    const params: Record<string, string> = {};
-    if (genres.length > 0) params.with_genres = genres.join(',');
-    if (languages.length > 0) params.with_original_language = languages.join(',');
-    if (actors.length > 0) params.with_cast = actors.join(',');
+export const discoverMovies = async ({ genres, languages, actors, platforms }: { genres: number[], languages: string[], actors: number[], platforms: number[] }): Promise<Movie[]> => {
+    const params: Record<string, string> = {
+        'watch_region': 'US', // Required for watch provider filtering
+    };
+    if (genres.length > 0) params.with_genres = genres.join('|');
+    if (languages.length > 0) params.with_original_language = languages.join('|');
+    if (actors.length > 0) params.with_cast = actors.join('|');
+    if (platforms.length > 0) params.with_watch_providers = platforms.join('|');
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);
     return data.results;
