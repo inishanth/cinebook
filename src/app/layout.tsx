@@ -7,7 +7,7 @@ import { BottomTabBar } from '@/components/layout/bottom-tab-bar';
 import { TopHeader } from '@/components/layout/top-header';
 
 export const metadata: Metadata = {
-  title: 'ReelDeal',
+  title: 'Cinebook',
   description: 'Find your next favorite movie.',
 };
 

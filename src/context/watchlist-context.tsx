@@ -20,11 +20,11 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   React.useEffect(() => {
     try {
-      const storedWatchlist = localStorage.getItem('reeldeal-watchlist');
+      const storedWatchlist = localStorage.getItem('cinebook-watchlist');
       if (storedWatchlist) {
         setWatchlist(JSON.parse(storedWatchlist));
       }
-      const storedRejected = localStorage.getItem('reeldeal-rejected');
+      const storedRejected = localStorage.getItem('cinebook-rejected');
       if (storedRejected) {
         setRejected(JSON.parse(storedRejected));
       }
@@ -35,7 +35,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   React.useEffect(() => {
     try {
-        localStorage.setItem('reeldeal-watchlist', JSON.stringify(watchlist));
+        localStorage.setItem('cinebook-watchlist', JSON.stringify(watchlist));
     } catch (error) {
         console.error("Failed to write watchlist to localStorage", error);
     }
@@ -43,7 +43,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   
   React.useEffect(() => {
     try {
-        localStorage.setItem('reeldeal-rejected', JSON.stringify(rejected));
+        localStorage.setItem('cinebook-rejected', JSON.stringify(rejected));
     } catch (error) {
         console.error("Failed to write rejected list to localStorage", error);
     }

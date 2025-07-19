@@ -154,17 +154,19 @@ export function TopHeader() {
             scrolled && "shadow-lg shadow-black/30"
             )}>
             <div className="container flex h-16 items-center">
-                <div className="flex items-center gap-2 mr-6">
+                <div className="flex items-center gap-2 mr-auto">
                     <Film className="h-8 w-8 text-primary" />
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">Cinebook</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
                     <SearchDialog />
                 </div>
-                <Button variant="ghost" size="icon">
-                    <User className="h-6 w-6" />
-                    <span className="sr-only">Profile</span>
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                    <Button variant="ghost" size="icon">
+                        <User className="h-6 w-6" />
+                        <span className="sr-only">Profile</span>
+                    </Button>
+                </div>
             </div>
         </header>
     );
