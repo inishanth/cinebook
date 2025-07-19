@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Film, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -178,7 +178,9 @@ export function TopHeader() {
             )}>
             <div className="container flex h-16 items-center">
                 <div className="flex items-center gap-2 mr-auto">
-                    <Film className="h-8 w-8 text-primary" />
+                    <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
+                        CB
+                    </div>
                     <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
@@ -186,7 +188,7 @@ export function TopHeader() {
                 </div>
                 <div className="flex items-center gap-2 ml-auto invisible">
                     {/* Placeholder to balance the header */}
-                    <Film className="h-8 w-8" />
+                     <div className="h-8 w-8" />
                     <h1 className="text-2xl font-headline hidden sm:block">CineBook</h1>
                 </div>
             </div>
