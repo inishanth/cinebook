@@ -10,7 +10,7 @@ import { ImdbLogo, MetacriticLogo, RottenTomatoesLogo } from '../icons/rating-lo
 import { NetflixLogo, HuluLogo, PrimeVideoLogo } from '../icons/platform-logos';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Heart, Clock, Tags } from 'lucide-react';
 
 interface MovieDetailModalProps {
   movie: Movie | null;
@@ -28,8 +28,9 @@ const platformIcons = {
 
 function DetailSkeleton() {
     return (
-      <div className="flex-grow overflow-y-auto p-6 -mt-32 md:-mt-40 z-10 relative text-white space-y-6">
+      <div className="p-6 text-white space-y-6">
         <Skeleton className="h-10 w-3/4" />
+        <Skeleton className="h-6 w-1/2" />
         <div className="flex items-center gap-4 flex-wrap">
             <Skeleton className="h-8 w-20" />
             <Skeleton className="h-8 w-20" />
@@ -78,56 +79,64 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
 
   const isInWatchlist = isMovieInWatchlist(movie.id);
   const trailer = details?.videos?.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+  const genres = details?.genres?.map(g => g.name).join(', ');
   
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
         side="bottom"
-        className="h-[90vh] bg-background border-t-2 border-primary p-0 flex flex-col"
+        className="h-[95vh] bg-background/80 backdrop-blur-sm border-t-2 border-primary p-0 flex flex-col rounded-t-2xl"
       >
-        <div className="relative h-64 md:h-80 flex-shrink-0">
+        <div className="absolute top-0 left-0 w-full h-80">
           <Image
             src={getBannerUrl(movie.backdrop_path)}
             alt={`Banner for ${movie.title}`}
             fill
-            className="object-cover"
+            className="object-cover opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
 
-        {loading ? <DetailSkeleton /> : (
-            <div className="flex-grow overflow-y-auto p-6 -mt-32 md:-mt-40 z-10 relative text-white">
-                <SheetHeader className="text-left space-y-4">
-                    <SheetTitle className="text-3xl md:text-4xl font-headline ">{movie.title}</SheetTitle>
-                    
-                    <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-2">
-                        <ImdbLogo className="h-6 w-auto" />
-                        <Badge variant="secondary" className="text-lg">{movie.vote_average.toFixed(1)}</Badge>
-                    </div>
-                    {/* Note: Rotten Tomatoes and Metacritic are not in TMDb API */}
-                    </div>
-
-                    <SheetDescription className="text-muted-foreground text-base max-w-prose">{movie.overview}</SheetDescription>
-                </SheetHeader>
-                
-                <div className="mt-6 flex flex-col gap-6">
-                    {/* 
-                    This is kept for demonstration as TMDb does not provide streaming platform data easily.
-                    A "watch provider" lookup would be needed.
-                    <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Available On</h3>
-                    <div className="flex space-x-4">
-                        {movie.platforms.map((platform) => (
-                        <div key={platform} className="p-2 bg-secondary rounded-md">
-                            {platformIcons[platform]}
+        <div className="flex-grow overflow-y-auto z-10 relative">
+            {loading ? <DetailSkeleton /> : (
+                <div className="p-6 text-white space-y-4 md:space-y-6">
+                    <SheetHeader className="text-left space-y-2">
+                        <SheetTitle className="text-3xl md:text-4xl font-headline text-white">{movie.title}</SheetTitle>
+                        
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                            {details?.runtime && (
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4" />
+                                    <span>{details.runtime} min</span>
+                                </div>
+                            )}
+                            {genres && (
+                               <div className="flex items-center gap-1.5">
+                                    <Tags className="w-4 h-4" />
+                                    <span>{genres}</span>
+                                </div>
+                            )}
                         </div>
-                        ))}
+                    </SheetHeader>
+                    
+                    <div className="flex items-center gap-4 flex-wrap border-y border-white/10 py-4">
+                        <div className="flex items-center gap-2">
+                            <ImdbLogo className="h-6 w-auto" />
+                            <Badge variant="secondary" className="text-lg bg-amber-400 text-black">{movie.vote_average.toFixed(1)}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <RottenTomatoesLogo className="h-6 w-auto" />
+                            <Badge variant="secondary" className="text-lg bg-red-600 text-white">N/A</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <MetacriticLogo className="h-6 w-auto" />
+                            <Badge variant="secondary" className="text-lg bg-yellow-400 text-black">N/A</Badge>
+                        </div>
                     </div>
-                    </div> 
-                    */}
 
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <SheetDescription className="text-white/90 text-base max-w-prose">{movie.overview}</SheetDescription>
+                    
+                    <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {trailer && (
                             <Button asChild className="w-full sm:w-auto flex-1" variant="outline">
                                 <a href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noopener noreferrer">
@@ -135,13 +144,14 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                                 </a>
                             </Button>
                         )}
-                        <Button onClick={() => addToWatchlist(movie)} disabled={isInWatchlist} className="w-full sm:w-auto flex-1">
-                            {isInWatchlist ? 'Added to Watchlist' : 'Add to Watchlist'}
+                        <Button onClick={() => addToWatchlist(movie)} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-primary hover:bg-primary/90">
+                           <Heart className="mr-2 h-4 w-4" />
+                           {isInWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
                         </Button>
                     </div>
                 </div>
-            </div>
-        )}
+            )}
+        </div>
       </SheetContent>
     </Sheet>
   );
