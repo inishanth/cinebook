@@ -1,4 +1,4 @@
-import type { Movie, MovieDetails } from '@/types';
+import type { Movie, MovieDetails, Genre } from '@/types';
 import { sub, format } from 'date-fns';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -65,14 +65,6 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         case 'now_playing':
             endpoint = '/movie/now_playing';
             break;
-        case 'action':
-             endpoint = '/discover/movie';
-             params = { with_genres: '28' };
-             break;
-        case 'comedy':
-             endpoint = '/discover/movie';
-             params = { with_genres: '35' };
-             break;
         default:
              endpoint = '/movie/popular';
     }
@@ -80,6 +72,11 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
     const data = await get<{ results: Movie[] }>(endpoint, params);
     return data.results;
 }
+
+export const getGenres = async (): Promise<Genre[]> => {
+  const data = await get<{ genres: Genre[] }>('/genre/movie/list');
+  return data.genres;
+};
 
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
@@ -92,9 +89,9 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
     return data.results;
 }
 
-export const discoverMovies = async ({ recency }: { recency?: string }): Promise<Movie[]> => {
+export const discoverMovies = async ({ recency, genreId }: { recency?: string, genreId?: string }): Promise<Movie[]> => {
     const params: Record<string, string> = {
-        'watch_region': 'US', // Required for watch provider filtering
+        'watch_region': 'US',
     };
     
     if (recency && recency !== 'all') {
@@ -119,6 +116,10 @@ export const discoverMovies = async ({ recency }: { recency?: string }): Promise
                 params['primary_release_date.lte'] = format(fiveYearsAgo, 'yyyy-MM-dd');
                 break;
         }
+    }
+    
+    if (genreId && genreId !== 'all') {
+        params.with_genres = genreId;
     }
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);

@@ -3,14 +3,14 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import type { Movie } from '@/types';
-import { getMoviesByCategory, discoverMovies } from '@/lib/movie-service';
+import type { Movie, Genre } from '@/types';
+import { getMoviesByCategory, discoverMovies, getGenres } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const movieCategories = [
@@ -18,8 +18,6 @@ const movieCategories = [
     { id: 'top_rated', title: 'Top Rated' },
     { id: 'upcoming', title: 'Upcoming' },
     { id: 'now_playing', title: 'Now Playing' },
-    { id: 'action', title: 'Action' },
-    { id: 'comedy', title: 'Comedy' }
 ];
 
 const recencyOptions = [
@@ -71,6 +69,8 @@ export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
     
+    const [allGenres, setAllGenres] = React.useState<Genre[]>([]);
+    const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedRecency, setSelectedRecency] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
@@ -80,15 +80,16 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedRecency !== 'all';
+    const hasActiveFilters = selectedRecency !== 'all' || selectedGenre !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const categoryMoviesData = await Promise.all(
-                    movieCategories.map(category => getMoviesByCategory(category.id))
-                );
+                const [categoryMoviesData, genresData] = await Promise.all([
+                    Promise.all(movieCategories.map(category => getMoviesByCategory(category.id))),
+                    getGenres()
+                ]);
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -96,6 +97,7 @@ export default function Home() {
                 });
 
                 setMoviesByCat(moviesData);
+                setAllGenres(genresData);
                 setError(null);
             } catch (e) {
                 if (e instanceof Error) {
@@ -122,7 +124,8 @@ export default function Home() {
             setIsFilteredView(true);
             try {
                 const movies = await discoverMovies({
-                    recency: selectedRecency
+                    recency: selectedRecency,
+                    genreId: selectedGenre,
                 });
                 setFilteredMovies(movies);
             } catch(e) {
@@ -133,7 +136,6 @@ export default function Home() {
             }
         }
         
-        // Debounce the filter application
         const handler = setTimeout(() => {
             applyFilters();
         }, 300);
@@ -142,10 +144,11 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedRecency, hasActiveFilters])
+    }, [selectedRecency, selectedGenre, hasActiveFilters])
 
     const handleClearFilters = () => {
         setSelectedRecency('all');
+        setSelectedGenre('all');
         setIsFilteredView(false);
     }
 
@@ -179,6 +182,19 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="flex flex-wrap gap-4 items-start">
+                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                        <SelectTrigger className="w-full md:w-[200px]">
+                            <SelectValue placeholder="Genre" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Genres</SelectItem>
+                            {allGenres.map(genre => (
+                                <SelectItem key={genre.id} value={String(genre.id)}>
+                                    {genre.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full md:w-[200px]">
                             <SelectValue placeholder="Recency" />
