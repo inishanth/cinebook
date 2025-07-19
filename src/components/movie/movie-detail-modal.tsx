@@ -20,6 +20,9 @@ interface MovieDetailModalProps {
 function DetailSkeleton() {
     return (
       <div className="p-6 text-white space-y-6">
+        <SheetHeader>
+            <SheetTitle className="sr-only">Loading movie details</SheetTitle>
+        </SheetHeader>
         <Skeleton className="h-10 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
         <div className="flex items-center gap-4 flex-wrap">
@@ -78,6 +81,9 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
         side="bottom"
         className="h-[95vh] bg-background/80 backdrop-blur-sm border-t-2 border-primary p-0 flex flex-col rounded-t-2xl"
       >
+         <SheetTitle className="sr-only">
+            {movie ? movie.title : 'Movie Details'}
+         </SheetTitle>
         <div className="absolute top-0 left-0 w-full h-80">
           <Image
             src={getBannerUrl(movie.backdrop_path)}
