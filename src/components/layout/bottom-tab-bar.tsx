@@ -2,13 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Clapperboard, Settings } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/swipe', label: 'Swipe', icon: Clapperboard },
-  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function BottomTabBar() {
