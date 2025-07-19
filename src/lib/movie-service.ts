@@ -1,4 +1,5 @@
 import type { Movie, MovieDetails, Genre, Actor, Language, WatchProvider } from '@/types';
+import { sub, format } from 'date-fns';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const API_BASE_URL = 'https://api.themoviedb.org/3';
@@ -49,7 +50,7 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     let endpoint = '';
-    let params = {};
+    let params: Record<string, string> = {};
 
     switch(categoryId) {
         case 'popular':
@@ -140,7 +141,7 @@ export const searchActors = async (query: string): Promise<Actor[]> => {
     return data.results;
 }
 
-export const discoverMovies = async ({ genres, languages, actors, platforms, year }: { genres: number[], languages: string[], actors: number[], platforms: number[], year?: number }): Promise<Movie[]> => {
+export const discoverMovies = async ({ genres, languages, actors, platforms, recency }: { genres: number[], languages: string[], actors: number[], platforms: number[], recency?: string }): Promise<Movie[]> => {
     const params: Record<string, string> = {
         'watch_region': 'US', // Required for watch provider filtering
     };
@@ -148,7 +149,30 @@ export const discoverMovies = async ({ genres, languages, actors, platforms, yea
     if (languages.length > 0) params.with_original_language = languages.join('|');
     if (actors.length > 0) params.with_cast = actors.join('|');
     if (platforms.length > 0) params.with_watch_providers = platforms.join('|');
-    if (year) params.primary_release_year = String(year);
+    
+    if (recency && recency !== 'all') {
+        const today = new Date();
+        let fromDate: Date;
+        
+        switch (recency) {
+            case '6m':
+                fromDate = sub(today, { months: 6 });
+                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                break;
+            case '1y':
+                fromDate = sub(today, { years: 1 });
+                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                break;
+            case '5y':
+                fromDate = sub(today, { years: 5 });
+                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                break;
+            case '5y+':
+                const fiveYearsAgo = sub(today, { years: 5 });
+                params['primary_release_date.lte'] = format(fiveYearsAgo, 'yyyy-MM-dd');
+                break;
+        }
+    }
     
     const data = await get<{ results: Movie[] }>('/discover/movie', params);
     return data.results;

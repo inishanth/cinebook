@@ -13,14 +13,23 @@ import { ArrowLeft, Check, ChevronsUpDown, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
     { id: 'upcoming', title: 'Upcoming' },
     { id: 'now_playing', title: 'Now Playing' },
+    { id: 'action', title: 'Action' },
+    { id: 'comedy', title: 'Comedy' }
+];
+
+const recencyOptions = [
+    { value: 'all', label: 'All Time' },
+    { value: '6m', label: 'Last 6 months' },
+    { value: '1y', label: 'Last 1 year' },
+    { value: '5y', label: 'Last 5 years' },
+    { value: '5y+', label: 'More than 5 years ago' },
 ];
 
 function CategoryRowSkeleton() {
@@ -92,7 +101,10 @@ function MultiSelectFilter<T extends { id: any, name: string }>({
                                 <CommandItem
                                     key={item.id}
                                     value={item.name}
-                                    onSelect={() => onSelect(item)}
+                                    onSelect={() => {
+                                        onSelect(item)
+                                        setOpen(false)
+                                    }}
                                 >
                                     <Check className={`mr-2 h-4 w-4 ${selectedIds.has(item.id) ? "opacity-100" : "opacity-0"}`} />
                                     {item.name}
@@ -127,54 +139,42 @@ function ActorFilter({ selected, onSelect, onRemove }: { selected: Actor[], onSe
     }, [searchQuery]);
 
     return (
-        <div className="space-y-2">
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between w-full md:w-auto">
-                        Actors
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                        <CommandInput
-                            placeholder="Search for an actor..."
-                            value={searchQuery}
-                            onValueChange={setSearchQuery}
-                        />
-                         <CommandList>
-                            {loading && <CommandItem disabled>Loading...</CommandItem>}
-                            <CommandEmpty>{!loading && "No actors found."}</CommandEmpty>
-                            <CommandGroup>
-                                {searchResults.map((actor) => (
-                                    <CommandItem
-                                        key={actor.id}
-                                        value={actor.name}
-                                        onSelect={() => {
-                                            onSelect(actor);
-                                            setSearchQuery("");
-                                            setOpen(false);
-                                        }}
-                                    >
-                                        {actor.name}
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                         </CommandList>
-                    </Command>
-                </PopoverContent>
-            </Popover>
-            <div className="flex flex-wrap gap-2">
-                {selected.map(actor => (
-                    <Badge key={actor.id} variant="secondary">
-                        {actor.name}
-                        <button onClick={() => onRemove(actor.id)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                            <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
-                ))}
-            </div>
-        </div>
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between w-full md:w-auto">
+                    Actors
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0">
+                <Command>
+                    <CommandInput
+                        placeholder="Search for an actor..."
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                    />
+                     <CommandList>
+                        {loading && <CommandItem disabled>Loading...</CommandItem>}
+                        <CommandEmpty>{!loading && "No actors found."}</CommandEmpty>
+                        <CommandGroup>
+                            {searchResults.map((actor) => (
+                                <CommandItem
+                                    key={actor.id}
+                                    value={actor.name}
+                                    onSelect={() => {
+                                        onSelect(actor);
+                                        setSearchQuery("");
+                                        setOpen(false);
+                                    }}
+                                >
+                                    {actor.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                     </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
     )
 }
 
@@ -189,7 +189,7 @@ export default function Home() {
     const [selectedLanguages, setSelectedLanguages] = React.useState<Language[]>([]);
     const [selectedActors, setSelectedActors] = React.useState<Actor[]>([]);
     const [selectedPlatforms, setSelectedPlatforms] = React.useState<WatchProvider[]>([]);
-    const [selectedYear, setSelectedYear] = React.useState<number[]>([new Date().getFullYear()]);
+    const [selectedRecency, setSelectedRecency] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
     const [isFilteredView, setIsFilteredView] = React.useState(false);
@@ -197,7 +197,9 @@ export default function Home() {
     const [loading, setLoading] = React.useState(true);
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
-
+    
+    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0 || selectedPlatforms.length > 0 || selectedRecency !== 'all';
+    
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
@@ -234,6 +236,43 @@ export default function Home() {
         fetchInitialData();
     }, []);
 
+    React.useEffect(() => {
+        const applyFilters = async () => {
+            if (!hasActiveFilters) {
+                setIsFilteredView(false);
+                return;
+            }
+
+            setLoadingFilteredMovies(true);
+            setIsFilteredView(true);
+            try {
+                const movies = await discoverMovies({
+                    genres: selectedGenres.map(g => g.id),
+                    languages: selectedLanguages.map(l => l.iso_639_1),
+                    actors: selectedActors.map(a => a.id),
+                    platforms: selectedPlatforms.map(p => p.id),
+                    recency: selectedRecency
+                });
+                setFilteredMovies(movies);
+            } catch(e) {
+                if (e instanceof Error) setError(e.message);
+                else setError('An unknown error occurred.');
+            } finally {
+                setLoadingFilteredMovies(false);
+            }
+        }
+        
+        // Debounce the filter application
+        const handler = setTimeout(() => {
+            applyFilters();
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+
+    }, [selectedGenres, selectedLanguages, selectedActors, selectedPlatforms, selectedRecency, hasActiveFilters])
+
     const toggleSelection = <T extends {id: any}>(list: T[], item: T): T[] => {
         if (list.some(g => g.id === item.id)) {
             return list.filter(g => g.id !== item.id);
@@ -252,37 +291,12 @@ export default function Home() {
     }
     const handleActorRemove = (actorId: number) => setSelectedActors(prev => prev.filter(a => a.id !== actorId));
 
-    const handleApplyFilters = async () => {
-        if (selectedGenres.length === 0 && selectedLanguages.length === 0 && selectedActors.length === 0 && selectedPlatforms.length === 0 && selectedYear[0] === new Date().getFullYear()) {
-            setIsFilteredView(false);
-            return;
-        }
-
-        setLoadingFilteredMovies(true);
-        setIsFilteredView(true);
-        try {
-            const movies = await discoverMovies({
-                genres: selectedGenres.map(g => g.id),
-                languages: selectedLanguages.map(l => l.iso_639_1),
-                actors: selectedActors.map(a => a.id),
-                platforms: selectedPlatforms.map(p => p.id),
-                year: selectedYear[0]
-            });
-            setFilteredMovies(movies);
-        } catch(e) {
-            if (e instanceof Error) setError(e.message);
-            else setError('An unknown error occurred.');
-        } finally {
-            setLoadingFilteredMovies(false);
-        }
-    }
-    
     const handleClearFilters = () => {
         setSelectedGenres([]);
         setSelectedLanguages([]);
         setSelectedActors([]);
         setSelectedPlatforms([]);
-        setSelectedYear([new Date().getFullYear()]);
+        setSelectedRecency('all');
         setIsFilteredView(false);
     }
 
@@ -307,41 +321,70 @@ export default function Home() {
             </div>
         );
     }
-
-    const hasActiveFilters = selectedGenres.length > 0 || selectedLanguages.length > 0 || selectedActors.length > 0 || selectedPlatforms.length > 0 || selectedYear[0] !== new Date().getFullYear();
+    
+    const removeGenre = (id: number) => setSelectedGenres(prev => prev.filter(g => g.id !== id));
+    const removeLanguage = (iso: string) => setSelectedLanguages(prev => prev.filter(l => l.iso_639_1 !== iso));
+    const removePlatform = (id: number) => setSelectedPlatforms(prev => prev.filter(p => p.id !== id));
 
     return (
         <>
             <div className="mb-8">
-                <h2 className="text-xl font-headline font-bold mb-4 text-primary">Discover Movies</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-                    <div className="flex flex-wrap gap-2">
-                        <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
-                        <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
-                        <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
-                    </div>
+                <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-xl font-headline font-bold text-primary">Discover Movies</h2>
+                     {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
+                </div>
+                <div className="flex flex-wrap gap-4 items-start">
+                    <MultiSelectFilter title="Genres" options={genres} selected={selectedGenres} onSelect={handleGenreSelect} />
+                    <MultiSelectFilter title="Languages" options={languages} selected={selectedLanguages} onSelect={handleLanguageSelect} />
+                    <MultiSelectFilter title="Platforms" options={platforms} selected={selectedPlatforms} onSelect={handlePlatformSelect} />
                     <ActorFilter selected={selectedActors} onSelect={handleActorSelect} onRemove={handleActorRemove} />
-                     <div className="space-y-2">
-                        <Label htmlFor="year-slider">Release Year: {selectedYear[0]}</Label>
-                        <Slider 
-                            id="year-slider"
-                            min={1980} 
-                            max={new Date().getFullYear()} 
-                            step={1} 
-                            value={selectedYear}
-                            onValueChange={setSelectedYear}
-                         />
-                    </div>
+                    <Select value={selectedRecency} onValueChange={setSelectedRecency}>
+                        <SelectTrigger className="w-full md:w-[200px]">
+                            <SelectValue placeholder="Recency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {recencyOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                  <div className="flex flex-wrap gap-2 mt-4">
-                        {selectedGenres.map(g => <Badge key={g.id}>{g.name}</Badge>)}
-                        {selectedLanguages.map(l => <Badge key={l.iso_639_1}>{l.english_name}</Badge>)}
-                        {selectedPlatforms.map(p => <Badge key={p.id}>{p.name}</Badge>)}
+                        {selectedGenres.map(g => (
+                            <Badge key={g.id} variant="secondary">
+                                {g.name}
+                                <button onClick={() => removeGenre(g.id)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {selectedLanguages.map(l => (
+                             <Badge key={l.iso_639_1} variant="secondary">
+                                {l.english_name}
+                                 <button onClick={() => removeLanguage(l.iso_639_1)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                        {selectedPlatforms.map(p => (
+                            <Badge key={p.id} variant="secondary">
+                                {p.name}
+                                <button onClick={() => removePlatform(p.id)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
+                         {selectedActors.map(actor => (
+                            <Badge key={actor.id} variant="secondary">
+                                {actor.name}
+                                <button onClick={() => handleActorRemove(actor.id)} className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </Badge>
+                        ))}
                  </div>
-                <div className="flex gap-4 mt-4">
-                    <Button onClick={handleApplyFilters} disabled={!hasActiveFilters}>Apply Filters</Button>
-                    {(isFilteredView || hasActiveFilters) && <Button variant="ghost" onClick={handleClearFilters}>Clear</Button>}
-                </div>
             </div>
 
             {isFilteredView ? (
@@ -352,7 +395,10 @@ export default function Home() {
                 ) : (
                     <MoviesByFilter
                         movies={filteredMovies}
-                        onBack={() => setIsFilteredView(false)}
+                        onBack={() => {
+                            setIsFilteredView(false);
+                            handleClearFilters();
+                        }}
                         onMovieClick={handleOpenModal}
                     />
                 )
