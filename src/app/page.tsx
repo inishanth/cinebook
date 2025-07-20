@@ -191,11 +191,33 @@ export default function Home() {
     };
 
     if (error) {
+        const isDbError = error.includes('DATABASE_URL');
         return (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-                <h2 className="text-2xl font-bold text-destructive mb-4">Oops! Something went wrong.</h2>
-                <p className="text-muted-foreground mb-4">{error}</p>
-                 <p className="text-sm text-muted-foreground">Please make sure you have added your Neon Database URL to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                <h2 className="text-2xl font-bold text-destructive mb-4">
+                    {isDbError ? 'Database Connection Error' : 'Oops! Something went wrong.'}
+                </h2>
+                <p className="text-muted-foreground mb-4 max-w-md">
+                    {isDbError 
+                        ? "The application couldn't connect to the database because the DATABASE_URL was not found. Please ensure it is configured correctly."
+                        : error
+                    }
+                </p>
+                {isDbError && (
+                    <div className="bg-secondary p-4 rounded-lg text-left max-w-md w-full">
+                        <h3 className="font-bold mb-2">How to fix this:</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm">
+                            <li>Create a new file named <code className="bg-background p-1 rounded">.env.local</code> in the root of your project.</li>
+                            <li>Inside this file, add the following line, replacing the placeholder with your actual Neon database URL:</li>
+                            <pre className="bg-background p-2 rounded-md mt-2 overflow-x-auto">
+                                <code className="text-sm">
+                                    DATABASE_URL="your_neon_database_url_here"
+                                </code>
+                            </pre>
+                             <li>After saving the file, please restart the application preview.</li>
+                        </ol>
+                    </div>
+                )}
             </div>
         );
     }
