@@ -33,7 +33,7 @@ const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
 export const getTrendingMovies = async (): Promise<Movie[]> => {
     // Assuming a 'trending' flag or ordering by popularity
     const query = `
-        SELECT * FROM movies
+        SELECT * FROM movie.movies
         ORDER BY release_date DESC
         LIMIT 20;
     `;
@@ -48,42 +48,42 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
     // This is a simplified example. A real implementation might involve more complex queries or table structures.
     switch(categoryId) {
         case 'popular':
-            query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
+            query = 'SELECT * FROM movie.movies ORDER BY release_date DESC LIMIT 20;';
             break;
         case 'top_rated':
-            query = 'SELECT * FROM movies ORDER BY vote_average DESC LIMIT 20;';
+            query = 'SELECT * FROM movie.movies ORDER BY vote_average DESC LIMIT 20;';
             break;
         case 'upcoming':
-            query = `SELECT * FROM movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
+            query = `SELECT * FROM movie.movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
             break;
         case 'now_playing':
-            query = `SELECT * FROM movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
+            query = `SELECT * FROM movie.movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
             break;
         default:
-             query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
+             query = 'SELECT * FROM movie.movies ORDER BY release_date DESC LIMIT 20;';
     }
 
     return runQuery<Movie>(query);
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
-  const query = 'SELECT * FROM genres ORDER BY name;';
+  const query = 'SELECT * FROM movie.genres ORDER BY name;';
   return runQuery<Genre>(query);
 };
 
 export const getLanguages = async (): Promise<Language[]> => {
-    const query = `SELECT * FROM languages ORDER BY english_name;`;
+    const query = `SELECT * FROM movie.languages ORDER BY english_name;`;
     return runQuery<Language>(query);
 };
 
 export const getPlatforms = async (): Promise<Platform[]> => {
-    const query = `SELECT * FROM platforms ORDER BY provider_name;`;
+    const query = `SELECT * FROM movie.platforms ORDER BY provider_name;`;
     return runQuery<Platform>(query);
 };
 
 export const getPopularActors = async (): Promise<Actor[]> => {
     const query = `
-        SELECT * FROM actors
+        SELECT * FROM movie.actors
         ORDER BY name ASC
         LIMIT 20;
     `;
@@ -94,7 +94,7 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
     // This is a complex query that would require joins across multiple tables
     // (movies, genres, movie_genres, actors, movie_cast, videos etc.)
     // For now, we'll return the basic movie info and mock the rest.
-    const movieQuery = 'SELECT * FROM movies WHERE id = $1;';
+    const movieQuery = 'SELECT * FROM movie.movies WHERE id = $1;';
     const movies = await runQuery<Movie>(movieQuery, [movieId]);
     
     if (movies.length === 0) {
@@ -115,7 +115,7 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     if (!query) return [];
     const searchQuery = `
-        SELECT * FROM movies
+        SELECT * FROM movie.movies
         WHERE title ILIKE $1
         LIMIT 20;
     `;
@@ -135,26 +135,26 @@ export const discoverMovies = async ({
     platformId?: string,
     actorId?: string,
 }): Promise<Movie[]> => {
-    let baseQuery = 'SELECT DISTINCT m.* FROM movies m';
+    let baseQuery = 'SELECT DISTINCT m.* FROM movie.movies m';
     const joins: string[] = [];
     const wheres: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
 
     if (genreId && genreId !== 'all') {
-        joins.push('LEFT JOIN movie_genres mg ON m.id = mg.movie_id');
+        joins.push('LEFT JOIN movie.movie_genres mg ON m.id = mg.movie_id');
         wheres.push(`mg.genre_id = $${paramIndex++}`);
         params.push(parseInt(genreId, 10));
     }
 
     if (platformId && platformId !== 'all') {
-        joins.push('LEFT JOIN movie_platforms mp ON m.id = mp.movie_id');
+        joins.push('LEFT JOIN movie.movie_platforms mp ON m.id = mp.movie_id');
         wheres.push(`mp.platform_id = $${paramIndex++}`);
         params.push(parseInt(platformId, 10));
     }
 
     if (actorId && actorId !== 'all') {
-        joins.push('LEFT JOIN movie_cast mc ON m.id = mc.movie_id');
+        joins.push('LEFT JOIN movie.movie_cast mc ON m.id = mc.movie_id');
         wheres.push(`mc.actor_id = $${paramIndex++}`);
         params.push(parseInt(actorId, 10));
     }
