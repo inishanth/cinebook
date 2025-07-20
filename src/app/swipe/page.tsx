@@ -1,4 +1,5 @@
 
+
 import { getTrendingMovies } from '@/lib/movie-service';
 import { SwipeClientPage } from './swipe-client-page';
 
@@ -12,11 +13,7 @@ export default async function SwipePage() {
   try {
     movies = await getTrendingMovies();
   } catch (e) {
-    if (e instanceof Error) {
-        error = e.message;
-    } else {
-        error = 'An unknown error occurred while fetching movies.';
-    }
+    error = e instanceof Error ? e.message : String(e);
     console.error(e);
   }
 

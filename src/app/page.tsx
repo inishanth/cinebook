@@ -120,11 +120,8 @@ export default function Home() {
                 setAllActors(actorsData);
                 setError(null);
             } catch (e) {
-                if (e instanceof Error) {
-                    setError(e.message);
-                } else {
-                    setError('An unknown error occurred.');
-                }
+                const errorMessage = e instanceof Error ? e.message : String(e);
+                setError(errorMessage);
                 console.error(e);
             } finally {
                 setLoading(false);
@@ -152,8 +149,8 @@ export default function Home() {
                 });
                 setFilteredMovies(movies);
             } catch(e) {
-                if (e instanceof Error) setError(e.message);
-                else setError('An unknown error occurred.');
+                const errorMessage = e instanceof Error ? e.message : String(e);
+                setError(errorMessage);
             } finally {
                 setLoadingFilteredMovies(false);
             }
