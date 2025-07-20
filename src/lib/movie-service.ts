@@ -20,18 +20,17 @@ const get = async <T>(path: string, params: Record<string, string> = {}): Promis
   try {
     const res = await fetch(url);
     if (!res.ok) {
-      console.error(`API Error: ${res.status} ${res.statusText}`);
-      const errorBody = await res.json().catch(() => ({})); // Catch if body isn't valid JSON
-      console.error('Error body:', errorBody);
-      throw new Error(`Failed to fetch data from TMDb. Status: ${res.status}`);
+      const errorBody = await res.json().catch(() => ({ status_message: 'Unknown error' }));
+      console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
+      throw new Error(`Failed to fetch data from TMDb: ${errorBody.status_message || res.statusText}. Please check your API key.`);
     }
     return res.json();
   } catch (error) {
     console.error('Network or fetch error:', error);
-    if (error instanceof Error) {
-        throw new Error(error.message);
+    if (error instanceof Error && error.message.includes('TMDb')) {
+      throw error;
     }
-    throw new Error('Failed to connect to TMDb API.');
+    throw new Error('Failed to connect to TMDb API. Please check your network connection and API key.');
   }
 };
 
