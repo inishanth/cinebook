@@ -4,14 +4,21 @@ import { Pool } from '@neondatabase/serverless';
 import type { Movie, MovieDetails, Genre, Language, Platform, Actor } from '@/types';
 import { sub, format } from 'date-fns';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+let pool: Pool;
+
+function getPool() {
+  if (!pool) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+  return pool;
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
 const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
-  const client = await pool.connect();
+  const dbPool = getPool();
+  const client = await dbPool.connect();
   try {
     const { rows } = await client.query(query, params);
     return rows as T[];
