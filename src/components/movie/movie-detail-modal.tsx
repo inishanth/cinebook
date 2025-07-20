@@ -2,7 +2,6 @@ import Image from 'next/image';
 import * as React from 'react';
 import type { Movie, MovieDetails } from '@/types';
 import { getMovieDetails } from '@/lib/movie-service';
-import { getBannerUrl } from '@/lib/image-utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +10,15 @@ import { ImdbLogo } from '../icons/rating-logos';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
+
+export const getPosterUrl = (path: string | null, size: 'w92' | 'w500' | 'original' = 'w500') => {
+  return path ? `https://image.tmdb.org/t/p/${size}${path}` : `https://placehold.co/${size === 'w92' ? '92x138' : '500x750'}.png`;
+};
+
+export const getBannerUrl = (path: string | null, size: 'original' | 'w1280' = 'original') => {
+  return path ? `https://image.tmdb.org/t/p/${size}${path}` : 'https://placehold.co/1280x720.png';
+};
+
 
 interface MovieDetailModalProps {
   movie: Movie | null;

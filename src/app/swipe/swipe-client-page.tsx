@@ -3,14 +3,13 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, X, Undo, Film } from 'lucide-react';
-import { getPosterUrl } from '@/lib/image-utils';
 import type { Movie } from '@/types';
 import { useWatchlist } from '@/context/watchlist-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import { ImdbLogo } from '@/components/icons/rating-logos';
-import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
+import { MovieDetailModal, getPosterUrl } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const SwipeCard = ({

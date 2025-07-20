@@ -3,7 +3,7 @@ import type { Movie } from '@/types';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import { getPosterUrl } from '@/lib/image-utils';
+import { getPosterUrl } from './movie-detail-modal';
 
 interface MovieCardProps {
   movie: Movie;

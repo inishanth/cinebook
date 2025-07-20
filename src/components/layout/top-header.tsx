@@ -9,10 +9,9 @@ import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { searchMovies } from '@/lib/movie-service';
-import { getPosterUrl } from '@/lib/image-utils';
 import type { Movie } from '@/types';
 import Image from 'next/image';
-import { MovieDetailModal } from '../movie/movie-detail-modal';
+import { MovieDetailModal, getPosterUrl } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 
