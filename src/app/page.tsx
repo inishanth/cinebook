@@ -3,8 +3,8 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import type { Movie, Genre, Language, Platform, Actor } from '@/types';
-import { getMoviesByCategory, discoverMovies, getGenres, getLanguages, getPlatforms, getPopularActors } from '@/lib/movie-service';
+import type { Movie } from '@/types';
+import { getMoviesByCategory, discoverMovies } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,15 +70,6 @@ export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
     
-    const [allGenres, setAllGenres] = React.useState<Genre[]>([]);
-    const [allLanguages, setAllLanguages] = React.useState<Language[]>([]);
-    const [allPlatforms, setAllPlatforms] = React.useState<Platform[]>([]);
-    const [allActors, setAllActors] = React.useState<Actor[]>([]);
-
-    const [selectedGenre, setSelectedGenre] = React.useState('all');
-    const [selectedLanguage, setSelectedLanguage] = React.useState('all');
-    const [selectedPlatform, setSelectedPlatform] = React.useState('all');
-    const [selectedActor, setSelectedActor] = React.useState('all');
     const [selectedRecency, setSelectedRecency] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
@@ -88,25 +79,15 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedRecency !== 'all' || selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedPlatform !== 'all' || selectedActor !== 'all';
+    const hasActiveFilters = selectedRecency !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const [
-                    categoryMoviesData, 
-                    genresData, 
-                    languagesData, 
-                    platformsData, 
-                    actorsData
-                ] = await Promise.all([
-                    Promise.all(movieCategories.map(category => getMoviesByCategory(category.id))),
-                    getGenres(),
-                    getLanguages(),
-                    getPlatforms(),
-                    getPopularActors()
-                ]);
+                const categoryMoviesData = await Promise.all(
+                    movieCategories.map(category => getMoviesByCategory(category.id))
+                );
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -114,10 +95,6 @@ export default function Home() {
                 });
 
                 setMoviesByCat(moviesData);
-                setAllGenres(genresData);
-                setAllLanguages(languagesData);
-                setAllPlatforms(platformsData);
-                setAllActors(actorsData);
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
@@ -142,10 +119,6 @@ export default function Home() {
             try {
                 const movies = await discoverMovies({
                     recency: selectedRecency,
-                    genreId: selectedGenre,
-                    language: selectedLanguage,
-                    platformId: selectedPlatform,
-                    actorId: selectedActor,
                 });
                 setFilteredMovies(movies);
             } catch(e) {
@@ -164,14 +137,10 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedRecency, selectedGenre, selectedLanguage, selectedPlatform, selectedActor, hasActiveFilters])
+    }, [selectedRecency, hasActiveFilters])
 
     const handleClearFilters = () => {
         setSelectedRecency('all');
-        setSelectedGenre('all');
-        setSelectedLanguage('all');
-        setSelectedPlatform('all');
-        setSelectedActor('all');
         setIsFilteredView(false);
     }
 
@@ -196,7 +165,7 @@ export default function Home() {
                 </h2>
                 <p className="text-muted-foreground mb-4 max-w-md">
                     {isDbError 
-                        ? "The application couldn't connect to the database because the DATABASE_URL was not found. Please ensure it is configured correctly."
+                        ? "The application couldn't connect to the database. Please ensure your DATABASE_URL is configured correctly."
                         : error
                     }
                 </p>
@@ -227,19 +196,6 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
-                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger className="w-full" variant="secondary">
-                            <SelectValue placeholder="All Genres" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genres</SelectItem>
-                            {allGenres.map(opt => (
-                                <SelectItem key={opt.id} value={String(opt.id)}>
-                                    {opt.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full" variant="secondary">
                             <SelectValue placeholder="Recency" />
@@ -248,45 +204,6 @@ export default function Home() {
                             {recencyOptions.map(opt => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                     {opt.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                     <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-full" variant="secondary">
-                            <SelectValue placeholder="All Languages" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="all">All Languages</SelectItem>
-                            {allLanguages.map(opt => (
-                                <SelectItem key={opt.id} value={String(opt.id)}>
-                                    {opt.english_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                        <SelectTrigger className="w-full" variant="secondary">
-                            <SelectValue placeholder="All Platforms" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="all">All Platforms</SelectItem>
-                            {allPlatforms.map(opt => (
-                                <SelectItem key={opt.id} value={String(opt.provider_id)}>
-                                    {opt.provider_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full" variant="secondary">
-                            <SelectValue placeholder="Any Actor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Any Actor</SelectItem>
-                            {allActors.map(opt => (
-                                <SelectItem key={opt.id} value={String(opt.id)}>
-                                    {opt.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>

@@ -1,7 +1,7 @@
 'use server';
 
 import { Pool } from '@neondatabase/serverless';
-import type { Movie, MovieDetails, Genre, Language, Platform, Actor } from '@/types';
+import type { Movie, MovieDetails } from '@/types';
 import { sub, format } from 'date-fns';
 
 let pool: Pool;
@@ -18,22 +18,22 @@ function getPool() {
 
 const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
   const dbPool = getPool();
-  const client = await dbPool.connect();
   try {
-    const { rows } = await client.query(query, params);
+    const { rows } = await dbPool.query(query, params);
     return rows as T[];
   } catch (error) {
     console.error('Database Query Error:', error);
-    throw new Error('Failed to fetch data from the database.');
-  } finally {
-    client.release();
-  }
+    // Return a more specific error or an empty array
+    if (error instanceof Error) {
+        throw new Error(`Failed to fetch data from the database. Details: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred while fetching data.');
+  } 
 };
 
 export const getTrendingMovies = async (): Promise<Movie[]> => {
-    // Assuming a 'trending' flag or ordering by popularity
     const query = `
-        SELECT * FROM movie.movies
+        SELECT * FROM movies
         ORDER BY release_date DESC
         LIMIT 20;
     `;
@@ -43,69 +43,39 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     let query = '';
     
-    // This assumes your `movies` table has columns like `popularity`, `vote_average`, 
-    // `release_date` and a status for 'upcoming' or 'now_playing'.
-    // This is a simplified example. A real implementation might involve more complex queries or table structures.
     switch(categoryId) {
         case 'popular':
-            query = 'SELECT * FROM movie.movies ORDER BY release_date DESC LIMIT 20;';
+            query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
             break;
         case 'top_rated':
-            query = 'SELECT * FROM movie.movies ORDER BY vote_average DESC LIMIT 20;';
+            query = 'SELECT * FROM movies ORDER BY vote_average DESC LIMIT 20;';
             break;
         case 'upcoming':
-            query = `SELECT * FROM movie.movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
+            query = `SELECT * FROM movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
             break;
         case 'now_playing':
-            query = `SELECT * FROM movie.movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
+            query = `SELECT * FROM movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
             break;
         default:
-             query = 'SELECT * FROM movie.movies ORDER BY release_date DESC LIMIT 20;';
+             query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
     }
 
     return runQuery<Movie>(query);
 }
 
-export const getGenres = async (): Promise<Genre[]> => {
-  const query = 'SELECT * FROM movie.genres ORDER BY name;';
-  return runQuery<Genre>(query);
-};
-
-export const getLanguages = async (): Promise<Language[]> => {
-    const query = `SELECT * FROM movie.languages ORDER BY english_name;`;
-    return runQuery<Language>(query);
-};
-
-export const getPlatforms = async (): Promise<Platform[]> => {
-    const query = `SELECT * FROM movie.platforms ORDER BY provider_name;`;
-    return runQuery<Platform>(query);
-};
-
-export const getPopularActors = async (): Promise<Actor[]> => {
-    const query = `
-        SELECT * FROM movie.actors
-        ORDER BY name ASC
-        LIMIT 20;
-    `;
-    return runQuery<Actor>(query);
-};
-
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
-    // This is a complex query that would require joins across multiple tables
-    // (movies, genres, movie_genres, actors, movie_cast, videos etc.)
-    // For now, we'll return the basic movie info and mock the rest.
-    const movieQuery = 'SELECT * FROM movie.movies WHERE id = $1;';
+    const movieQuery = 'SELECT * FROM movies WHERE id = $1;';
     const movies = await runQuery<Movie>(movieQuery, [movieId]);
     
     if (movies.length === 0) {
         throw new Error('Movie not found');
     }
     
-    // Mocking additional details that would require more complex joins
+    // Since we only have one table, we return the movie data with empty arrays for related data.
     return {
         ...movies[0],
         genres: [],
-        runtime: 120,
+        runtime: 120, // Mocked value
         videos: { results: [] },
         credits: { cast: [], crew: [] },
         release_dates: { results: [] },
@@ -115,7 +85,7 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     if (!query) return [];
     const searchQuery = `
-        SELECT * FROM movie.movies
+        SELECT * FROM movies
         WHERE title ILIKE $1
         LIMIT 20;
     `;
@@ -124,46 +94,14 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
 
 export const discoverMovies = async ({
     recency,
-    genreId,
-    language,
-    platformId,
-    actorId,
 }: {
     recency?: string,
-    genreId?: string,
-    language?: string,
-    platformId?: string,
-    actorId?: string,
 }): Promise<Movie[]> => {
-    let baseQuery = 'SELECT DISTINCT m.* FROM movie.movies m';
-    const joins: string[] = [];
+    let baseQuery = 'SELECT * FROM movies';
     const wheres: string[] = [];
     const params: any[] = [];
     let paramIndex = 1;
 
-    if (genreId && genreId !== 'all') {
-        joins.push('LEFT JOIN movie.movie_genres mg ON m.id = mg.movie_id');
-        wheres.push(`mg.genre_id = $${paramIndex++}`);
-        params.push(parseInt(genreId, 10));
-    }
-
-    if (platformId && platformId !== 'all') {
-        joins.push('LEFT JOIN movie.movie_platforms mp ON m.id = mp.movie_id');
-        wheres.push(`mp.platform_id = $${paramIndex++}`);
-        params.push(parseInt(platformId, 10));
-    }
-
-    if (actorId && actorId !== 'all') {
-        joins.push('LEFT JOIN movie.movie_cast mc ON m.id = mc.movie_id');
-        wheres.push(`mc.actor_id = $${paramIndex++}`);
-        params.push(parseInt(actorId, 10));
-    }
-
-    if (language && language !== 'all') {
-        wheres.push(`m.original_language = $${paramIndex++}`);
-        params.push(language);
-    }
-    
     if (recency && recency !== 'all') {
         const today = new Date();
         let fromDate: Date;
@@ -171,22 +109,22 @@ export const discoverMovies = async ({
         switch (recency) {
             case '6m':
                 fromDate = sub(today, { months: 6 });
-                wheres.push(`m.release_date >= $${paramIndex++}`);
+                wheres.push(`release_date >= $${paramIndex++}`);
                 params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '1y':
                 fromDate = sub(today, { years: 1 });
-                wheres.push(`m.release_date >= $${paramIndex++}`);
+                wheres.push(`release_date >= $${paramIndex++}`);
                 params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y':
                 fromDate = sub(today, { years: 5 });
-                wheres.push(`m.release_date >= $${paramIndex++}`);
+                wheres.push(`release_date >= $${paramIndex++}`);
                 params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y+':
                 const fiveYearsAgo = sub(today, { years: 5 });
-                wheres.push(`m.release_date <= $${paramIndex++}`);
+                wheres.push(`release_date <= $${paramIndex++}`);
                 params.push(format(fiveYearsAgo, 'yyyy-MM-dd'));
                 break;
         }
@@ -194,9 +132,8 @@ export const discoverMovies = async ({
     
     const finalQuery = `
         ${baseQuery}
-        ${joins.join('\n')}
         ${wheres.length > 0 ? 'WHERE ' + wheres.join(' AND ') : ''}
-        ORDER BY m.release_date DESC
+        ORDER BY release_date DESC
         LIMIT 40;
     `;
     
