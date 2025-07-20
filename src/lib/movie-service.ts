@@ -1,118 +1,127 @@
+import { Pool } from '@neondatabase/serverless';
 import type { Movie, MovieDetails, Genre, Language, Platform, Actor } from '@/types';
 import { sub, format } from 'date-fns';
 
-const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-const API_BASE_URL = 'https://api.themoviedb.org/3';
-const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
-const get = async <T>(path: string, params: Record<string, string> = {}): Promise<T> => {
-  if (!API_KEY) {
-    throw new Error('TMDb API key is not configured. Please add NEXT_PUBLIC_TMDB_API_KEY to your .env.local file.');
-  }
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-  const urlParams = new URLSearchParams({
-    api_key: API_KEY,
-    ...params,
-  });
-
-  const url = `${API_BASE_URL}${path}?${urlParams.toString()}`;
-
+const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
+  const client = await pool.connect();
   try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errorBody = await res.json().catch(() => ({ status_message: 'Unknown error' }));
-      console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
-      throw new Error(`Failed to fetch data from TMDb: ${errorBody.status_message || res.statusText}. Please check your API key.`);
-    }
-    return res.json();
+    const { rows } = await client.query(query, params);
+    return rows as T[];
   } catch (error) {
-    console.error('Network or fetch error:', error);
-    if (error instanceof Error && error.message.includes('TMDb')) {
-      throw error;
-    }
-    throw new Error('Failed to connect to TMDb API. Please check your network connection and API key.');
+    console.error('Database Query Error:', error);
+    throw new Error('Failed to fetch data from the database.');
+  } finally {
+    client.release();
   }
 };
 
+
 export const getPosterUrl = (path: string | null, size: 'w92' | 'w500' | 'original' = 'w500') => {
-  return path ? `${IMAGE_BASE_URL}${size}${path}` : 'https://placehold.co/500x750.png';
+  // Assuming poster_path is a full URL now, or we use a placeholder
+  return path || 'https://placehold.co/500x750.png';
 };
 
 export const getBannerUrl = (path: string | null, size: 'original' | 'w1280' = 'original') => {
-  return path ? `${IMAGE_BASE_URL}${size}${path}` : 'https://placehold.co/1280x720.png';
+  // Assuming backdrop_path is a full URL now, or we use a placeholder
+  return path || 'https://placehold.co/1280x720.png';
 };
 
 export const getTrendingMovies = async (): Promise<Movie[]> => {
-  const data = await get<{ results: Movie[] }>('/trending/movie/week');
-  return data.results;
+    // Assuming a 'trending' flag or ordering by popularity
+    const query = `
+        SELECT * FROM movies
+        ORDER BY popularity DESC
+        LIMIT 20;
+    `;
+    return runQuery<Movie>(query);
 };
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
-    let endpoint = '';
-    let params: Record<string, string> = {};
-
+    let query = '';
+    
+    // This assumes your `movies` table has columns like `popularity`, `vote_average`, 
+    // `release_date` and a status for 'upcoming' or 'now_playing'.
+    // This is a simplified example. A real implementation might involve more complex queries or table structures.
     switch(categoryId) {
         case 'popular':
-            endpoint = '/movie/popular';
+            query = 'SELECT * FROM movies ORDER BY popularity DESC LIMIT 20;';
             break;
         case 'top_rated':
-            endpoint = '/movie/top_rated';
+            query = 'SELECT * FROM movies ORDER BY vote_average DESC LIMIT 20;';
             break;
         case 'upcoming':
-            endpoint = '/movie/upcoming';
+            query = `SELECT * FROM movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
             break;
         case 'now_playing':
-            endpoint = '/movie/now_playing';
+            query = `SELECT * FROM movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
             break;
         default:
-             endpoint = '/movie/popular';
+             query = 'SELECT * FROM movies ORDER BY popularity DESC LIMIT 20;';
     }
 
-    const data = await get<{ results: Movie[] }>(endpoint, params);
-    return data.results;
+    return runQuery<Movie>(query);
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
-  const data = await get<{ genres: Genre[] }>('/genre/movie/list');
-  return data.genres;
+  const query = 'SELECT * FROM genres ORDER BY name;';
+  return runQuery<Genre>(query);
 };
 
 export const getLanguages = async (): Promise<Language[]> => {
-    const data = await get<Language[]>('/configuration/languages');
-    return data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+    const query = `SELECT * FROM languages ORDER BY english_name;`;
+    return runQuery<Language>(query);
 };
 
 export const getPlatforms = async (): Promise<Platform[]> => {
-    const data = await get<{ results: Platform[] }>('/watch/providers/movie', { watch_region: 'US' });
-    // A curated list of popular platforms
-    const popularPlatformIds = new Set([
-        8, // Netflix
-        9, // Amazon Prime Video
-        15, // Hulu
-        337, // Disney Plus
-        122, // Hotstar
-        220, // JioCinema
-        384, // HBO Max -> Max
-        257, // Apple TV
-        350, // Peacock
-        531, // Paramount+
-    ]);
-    return data.results.filter(p => popularPlatformIds.has(p.provider_id)).sort((a,b) => a.provider_name.localeCompare(b.provider_name));
+    const query = `SELECT * FROM platforms ORDER BY provider_name;`;
+    return runQuery<Platform>(query);
 };
 
 export const getPopularActors = async (): Promise<Actor[]> => {
-    const data = await get<{ results: Actor[] }>('/person/popular');
-    return data.results;
+    const query = `
+        SELECT * FROM actors
+        ORDER BY popularity DESC
+        LIMIT 20;
+    `;
+    return runQuery<Actor>(query);
 };
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
-    return get<MovieDetails>(`/movie/${movieId}`, { append_to_response: 'videos,credits,release_dates' });
+    // This is a complex query that would require joins across multiple tables
+    // (movies, genres, movie_genres, actors, movie_cast, videos etc.)
+    // For now, we'll return the basic movie info and mock the rest.
+    const movieQuery = 'SELECT * FROM movies WHERE id = $1;';
+    const movies = await runQuery<Movie>(movieQuery, [movieId]);
+    
+    if (movies.length === 0) {
+        throw new Error('Movie not found');
+    }
+    
+    // Mocking additional details that would require more complex joins
+    return {
+        ...movies[0],
+        genres: [],
+        runtime: 120,
+        videos: { results: [] },
+        credits: { cast: [], crew: [] },
+        release_dates: { results: [] },
+    } as MovieDetails;
 };
 
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     if (!query) return [];
-    const data = await get<{ results: Movie[] }>('/search/movie', { query });
-    return data.results;
+    const searchQuery = `
+        SELECT * FROM movies
+        WHERE title ILIKE $1
+        LIMIT 20;
+    `;
+    return runQuery<Movie>(searchQuery, [`%${query}%`]);
 }
 
 export const discoverMovies = async ({
@@ -128,9 +137,34 @@ export const discoverMovies = async ({
     platformId?: string,
     actorId?: string,
 }): Promise<Movie[]> => {
-    const params: Record<string, string> = {
-        'watch_region': 'US',
-    };
+    let baseQuery = 'SELECT DISTINCT m.* FROM movies m';
+    const joins: string[] = [];
+    const wheres: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (genreId && genreId !== 'all') {
+        joins.push('LEFT JOIN movie_genres mg ON m.id = mg.movie_id');
+        wheres.push(`mg.genre_id = $${paramIndex++}`);
+        params.push(parseInt(genreId, 10));
+    }
+
+    if (platformId && platformId !== 'all') {
+        joins.push('LEFT JOIN movie_platforms mp ON m.id = mp.movie_id');
+        wheres.push(`mp.platform_id = $${paramIndex++}`);
+        params.push(parseInt(platformId, 10));
+    }
+
+    if (actorId && actorId !== 'all') {
+        joins.push('LEFT JOIN movie_cast mc ON m.id = mc.movie_id');
+        wheres.push(`mc.actor_id = $${paramIndex++}`);
+        params.push(parseInt(actorId, 10));
+    }
+
+    if (language && language !== 'all') {
+        wheres.push(`m.original_language = $${paramIndex++}`);
+        params.push(language);
+    }
     
     if (recency && recency !== 'all') {
         const today = new Date();
@@ -139,43 +173,34 @@ export const discoverMovies = async ({
         switch (recency) {
             case '6m':
                 fromDate = sub(today, { months: 6 });
-                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                wheres.push(`m.release_date >= $${paramIndex++}`);
+                params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '1y':
                 fromDate = sub(today, { years: 1 });
-                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                wheres.push(`m.release_date >= $${paramIndex++}`);
+                params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y':
                 fromDate = sub(today, { years: 5 });
-                params['primary_release_date.gte'] = format(fromDate, 'yyyy-MM-dd');
+                wheres.push(`m.release_date >= $${paramIndex++}`);
+                params.push(format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y+':
                 const fiveYearsAgo = sub(today, { years: 5 });
-                params['primary_release_date.lte'] = format(fiveYearsAgo, 'yyyy-MM-dd');
+                wheres.push(`m.release_date <= $${paramIndex++}`);
+                params.push(format(fiveYearsAgo, 'yyyy-MM-dd'));
                 break;
         }
     }
     
-    if (genreId && genreId !== 'all') {
-        params.with_genres = genreId;
-    }
-
-    if (language && language !== 'all') {
-        params.with_original_language = language;
-    }
-
-    if (platformId && platformId !== 'all') {
-        params.with_watch_providers = platformId;
-    }
-
-    if (actorId && actorId !== 'all') {
-        params.with_cast = actorId;
-    }
+    const finalQuery = `
+        ${baseQuery}
+        ${joins.join('\n')}
+        ${wheres.length > 0 ? 'WHERE ' + wheres.join(' AND ') : ''}
+        ORDER BY m.popularity DESC
+        LIMIT 40;
+    `;
     
-    const page1Promise = get<{ results: Movie[] }>('/discover/movie', { ...params, page: '1' });
-    const page2Promise = get<{ results: Movie[] }>('/discover/movie', { ...params, page: '2' });
-
-    const [page1Data, page2Data] = await Promise.all([page1Promise, page2Promise]);
-    
-    return [...page1Data.results, ...page2Data.results];
+    return runQuery<Movie>(finalQuery, params);
 }

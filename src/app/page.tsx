@@ -115,8 +115,8 @@ export default function Home() {
 
                 setMoviesByCat(moviesData);
                 setAllGenres(genresData);
-                setAllLanguages(languagesData.map(l => ({ id: l.iso_639_1, name: l.english_name })));
-                setAllPlatforms(platformsData.map(p => ({ id: p.provider_id, name: p.provider_name })));
+                setAllLanguages(languagesData);
+                setAllPlatforms(platformsData);
                 setAllActors(actorsData);
                 setError(null);
             } catch (e) {
@@ -195,7 +195,7 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center h-full text-center">
                 <h2 className="text-2xl font-bold text-destructive mb-4">Oops! Something went wrong.</h2>
                 <p className="text-muted-foreground mb-4">{error}</p>
-                <p className="text-sm text-muted-foreground">Please make sure you have added your TMDb API key to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
+                 <p className="text-sm text-muted-foreground">Please make sure you have added your Neon Database URL to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
             </div>
         );
     }
@@ -241,7 +241,7 @@ export default function Home() {
                              <SelectItem value="all">All Languages</SelectItem>
                             {allLanguages.map(opt => (
                                 <SelectItem key={opt.id} value={String(opt.id)}>
-                                    {opt.name}
+                                    {opt.english_name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -253,8 +253,8 @@ export default function Home() {
                         <SelectContent>
                              <SelectItem value="all">All Platforms</SelectItem>
                             {allPlatforms.map(opt => (
-                                <SelectItem key={opt.id} value={String(opt.id)}>
-                                    {opt.name}
+                                <SelectItem key={opt.id} value={String(opt.provider_id)}>
+                                    {opt.provider_name}
                                 </SelectItem>
                             ))}
                         </SelectContent>

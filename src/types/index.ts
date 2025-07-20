@@ -15,12 +15,13 @@ export interface Genre {
 }
 
 export interface Language {
-    iso_639_1: string;
+    id: string; // e.g., 'en'
+    name: string; // e.g., 'English'
     english_name: string;
-    name: string;
 }
 
 export interface Platform {
+    id: number;
     provider_id: number;
     provider_name: string;
     logo_path: string;
