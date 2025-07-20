@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { XCircle } from 'lucide-react';
-import { getPosterUrl } from '@/lib/movie-service';
+import { getPosterUrl } from '@/lib/image-utils';
 
 export default function SettingsPage() {
   const { watchlist, removeFromWatchlist } = useWatchlist();

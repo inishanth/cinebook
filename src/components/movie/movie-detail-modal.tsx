@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import * as React from 'react';
 import type { Movie, MovieDetails } from '@/types';
-import { getMovieDetails, getBannerUrl } from '@/lib/movie-service';
+import { getMovieDetails } from '@/lib/movie-service';
+import { getBannerUrl } from '@/lib/image-utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -1,3 +1,5 @@
+'use server';
+
 import { Pool } from '@neondatabase/serverless';
 import type { Movie, MovieDetails, Genre, Language, Platform, Actor } from '@/types';
 import { sub, format } from 'date-fns';
@@ -21,22 +23,11 @@ const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
   }
 };
 
-
-export const getPosterUrl = (path: string | null, size: 'w92' | 'w500' | 'original' = 'w500') => {
-  // Assuming poster_path is a full URL now, or we use a placeholder
-  return path || 'https://placehold.co/500x750.png';
-};
-
-export const getBannerUrl = (path: string | null, size: 'original' | 'w1280' = 'original') => {
-  // Assuming backdrop_path is a full URL now, or we use a placeholder
-  return path || 'https://placehold.co/1280x720.png';
-};
-
 export const getTrendingMovies = async (): Promise<Movie[]> => {
     // Assuming a 'trending' flag or ordering by popularity
     const query = `
         SELECT * FROM movies
-        ORDER BY popularity DESC
+        ORDER BY release_date DESC
         LIMIT 20;
     `;
     return runQuery<Movie>(query);
@@ -50,7 +41,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
     // This is a simplified example. A real implementation might involve more complex queries or table structures.
     switch(categoryId) {
         case 'popular':
-            query = 'SELECT * FROM movies ORDER BY popularity DESC LIMIT 20;';
+            query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
             break;
         case 'top_rated':
             query = 'SELECT * FROM movies ORDER BY vote_average DESC LIMIT 20;';
@@ -62,7 +53,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = `SELECT * FROM movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
             break;
         default:
-             query = 'SELECT * FROM movies ORDER BY popularity DESC LIMIT 20;';
+             query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
     }
 
     return runQuery<Movie>(query);
@@ -86,7 +77,7 @@ export const getPlatforms = async (): Promise<Platform[]> => {
 export const getPopularActors = async (): Promise<Actor[]> => {
     const query = `
         SELECT * FROM actors
-        ORDER BY popularity DESC
+        ORDER BY name ASC
         LIMIT 20;
     `;
     return runQuery<Actor>(query);
@@ -198,7 +189,7 @@ export const discoverMovies = async ({
         ${baseQuery}
         ${joins.join('\n')}
         ${wheres.length > 0 ? 'WHERE ' + wheres.join(' AND ') : ''}
-        ORDER BY m.popularity DESC
+        ORDER BY m.release_date DESC
         LIMIT 40;
     `;
     

@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, X, Undo, Film } from 'lucide-react';
-import { getTrendingMovies, getPosterUrl } from '@/lib/movie-service';
+import { getTrendingMovies } from '@/lib/movie-service';
+import { getPosterUrl } from '@/lib/image-utils';
 import type { Movie } from '@/types';
 import { useWatchlist } from '@/context/watchlist-context';
 import { Button } from '@/components/ui/button';
