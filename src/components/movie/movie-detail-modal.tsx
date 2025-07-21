@@ -136,7 +136,7 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                     
                     <div className="flex items-center gap-6 flex-wrap border-y border-white/10 py-4">
                         <div className="flex items-center gap-2" title="TMDb Rating">
-                           <ImdbLogo className="h-6" />
+                           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
                            <span className="text-lg font-bold">{movie.vote_average.toFixed(1)}</span>
                            <span className="text-sm text-muted-foreground">/ 10</span>
                         </div>
