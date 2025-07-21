@@ -5,10 +5,8 @@ import type { Movie } from '@/types';
 
 interface WatchlistContextType {
   watchlist: Movie[];
-  rejected: number[];
   addToWatchlist: (movie: Movie) => void;
   removeFromWatchlist: (movieId: number) => void;
-  rejectMovie: (movieId: number) => void;
   isMovieInWatchlist: (movieId: number) => boolean;
 }
 
@@ -16,17 +14,12 @@ const WatchlistContext = React.createContext<WatchlistContextType | undefined>(u
 
 export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [watchlist, setWatchlist] = React.useState<Movie[]>([]);
-  const [rejected, setRejected] = React.useState<number[]>([]);
 
   React.useEffect(() => {
     try {
       const storedWatchlist = localStorage.getItem('cinebook-watchlist');
       if (storedWatchlist) {
         setWatchlist(JSON.parse(storedWatchlist));
-      }
-      const storedRejected = localStorage.getItem('cinebook-rejected');
-      if (storedRejected) {
-        setRejected(JSON.parse(storedRejected));
       }
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
@@ -41,14 +34,6 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [watchlist]);
   
-  React.useEffect(() => {
-    try {
-        localStorage.setItem('cinebook-rejected', JSON.stringify(rejected));
-    } catch (error) {
-        console.error("Failed to write rejected list to localStorage", error);
-    }
-  }, [rejected]);
-
   const addToWatchlist = (movie: Movie) => {
     setWatchlist((prev) => {
       if (prev.find((m) => m.id === movie.id)) {
@@ -61,15 +46,6 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const removeFromWatchlist = (movieId: number) => {
     setWatchlist((prev) => prev.filter((movie) => movie.id !== movieId));
   };
-
-  const rejectMovie = (movieId: number) => {
-    setRejected((prev) => {
-      if (prev.includes(movieId)) {
-        return prev;
-      }
-      return [...prev, movieId]
-    });
-  };
   
   const isMovieInWatchlist = (movieId: number) => {
     return watchlist.some(movie => movie.id === movieId);
@@ -77,7 +53,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <WatchlistContext.Provider
-      value={{ watchlist, rejected, addToWatchlist, removeFromWatchlist, rejectMovie, isMovieInWatchlist }}
+      value={{ watchlist, addToWatchlist, removeFromWatchlist, isMovieInWatchlist }}
     >
       {children}
     </WatchlistContext.Provider>
