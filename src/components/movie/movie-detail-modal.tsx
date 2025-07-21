@@ -9,14 +9,13 @@ import { useWatchlist } from '@/context/watchlist-context';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
-import { ImdbLogo } from '@/components/icons/rating-logos';
 
 
-const getBannerUrl = (path: string | null) => {
+const getPosterUrl = (path: string | null) => {
   if (!path) {
-    return 'https://placehold.co/1280x720.png';
+    return 'https://placehold.co/500x750.png';
   }
-  return `https://image.tmdb.org/t/p/original${path}`;
+  return `https://image.tmdb.org/t/p/w500${path}`;
 };
 
 
@@ -95,10 +94,10 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
          </SheetTitle>
         <div className="absolute top-0 left-0 w-full h-80">
           <Image
-            src={getBannerUrl(movie.backdrop_path)}
-            alt={`Banner for ${movie.title}`}
+            src={getPosterUrl(movie.poster_url)}
+            alt={`Poster for ${movie.title}`}
             fill
-            className="object-cover opacity-30"
+            className="object-cover object-top opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
         </div>
