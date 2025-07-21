@@ -11,8 +11,8 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie, onClick }: MovieCardProps) {
-  const posterUrl = (movie.poster_url && movie.poster_url.startsWith('http')) 
-    ? movie.poster_url 
+  const posterUrl = movie.poster_url
+    ? `https://image.tmdb.org/t/p/w500${movie.poster_url}`
     : 'https://placehold.co/500x750.png';
 
   return (

@@ -16,12 +16,7 @@ const getBannerUrl = (path: string | null) => {
   if (!path) {
     return 'https://placehold.co/1280x720.png';
   }
-  // Assuming backdrop_path is a full URL. If not, construct it.
-  // This is a simple fallback logic.
-  if (path.startsWith('/')) {
-    return `https://image.tmdb.org/t/p/original${path}`;
-  }
-  return path;
+  return `https://image.tmdb.org/t/p/original${path}`;
 };
 
 
