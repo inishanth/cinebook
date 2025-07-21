@@ -10,7 +10,6 @@ import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
 import { ImdbLogo } from '@/components/icons/rating-logos';
-import { NetflixLogo, HuluLogo, PrimeVideoLogo } from '@/components/icons/platform-logos';
 
 
 const getBannerUrl = (path: string | null) => {
@@ -58,21 +57,6 @@ function DetailSkeleton() {
     );
 }
 
-const RottenTomatoesIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#FA320A"/>
-        <path d="M12 4c-2.94 0-5.46 1.66-6.73 4.01l1.49.87C7.62 6.99 9.69 6 12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6c-2.31 0-4.34-1.31-5.38-3.23l-1.5 0.86C6.46 18.34 9.06 20 12 20c4.42 0 8-3.58 8-8s-3.58-8-8-8z" fill="#FA320A"/>
-        <path d="M10.15 15.6c-.34.34-.78.52-1.25.52-.47 0-.91-.18-1.25-.52-.69-.68-.69-1.78 0-2.46.34-.34.78-.52 1.25-.52.47 0 .91.18 1.25.52.69.68.69 1.78 0 2.46zM15.1 15.6c-.34.34-.78.52-1.25.52-.47 0-.91-.18-1.25-.52-.69-.68-.69-1.78 0-2.46.34-.34.78-.52 1.25-.52.47 0 .91.18 1.25.52.69.68.69 1.78 0 2.46z" fill="#FA320A"/>
-    </svg>
-);
-const MetacriticIcon = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="24" height="24" rx="4" fill="#FFCC33"/>
-        <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">M</text>
-    </svg>
-);
-
-
 export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: MovieDetailModalProps) {
   const { addToWatchlist, isMovieInWatchlist } = useWatchlist();
   const [details, setDetails] = React.useState<MovieDetails | null>(null);
@@ -105,9 +89,6 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   const trailer = details?.videos?.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
   const genres = details?.genres?.map(g => g.name).join(', ');
   
-  // Convert 10-point scale to 100 for RT/Metacritic
-  const rtScore = Math.round(movie.vote_average * 10);
-
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
@@ -154,18 +135,10 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                     </SheetHeader>
                     
                     <div className="flex items-center gap-6 flex-wrap border-y border-white/10 py-4">
-                        <div className="flex items-center gap-2" title="IMDb Rating">
+                        <div className="flex items-center gap-2" title="TMDb Rating">
                            <ImdbLogo className="h-6" />
                            <span className="text-lg font-bold">{movie.vote_average.toFixed(1)}</span>
                            <span className="text-sm text-muted-foreground">/ 10</span>
-                        </div>
-                         <div className="flex items-center gap-2" title="Rotten Tomatoes Score (placeholder)">
-                           <RottenTomatoesIcon />
-                           <span className="text-lg font-bold">{rtScore}%</span>
-                        </div>
-                         <div className="flex items-center gap-2" title="Metacritic Score (placeholder)">
-                           <MetacriticIcon />
-                           <span className="text-lg font-bold">{rtScore}</span>
                         </div>
                     </div>
 
