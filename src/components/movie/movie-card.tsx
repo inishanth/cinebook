@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import type { Movie } from '@/types';
 import { motion } from 'framer-motion';
@@ -10,6 +11,10 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie, onClick }: MovieCardProps) {
+  const posterUrl = (movie.poster_url && movie.poster_url.startsWith('http')) 
+    ? movie.poster_url 
+    : 'https://placehold.co/500x750.png';
+
   return (
     <motion.div
       onClick={onClick}
@@ -19,7 +24,7 @@ export function MovieCard({ movie, onClick }: MovieCardProps) {
     >
       <div className="rounded-lg overflow-hidden shadow-lg bg-secondary">
         <Image
-          src={movie.poster_url || 'https://placehold.co/500x750.png'}
+          src={posterUrl}
           alt={`Poster for ${movie.title}`}
           width={500}
           height={750}
