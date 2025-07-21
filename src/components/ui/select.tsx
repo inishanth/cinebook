@@ -13,7 +13,7 @@ const selectTriggerVariants = cva(
       variants: {
           variant: {
               default: "bg-background",
-              secondary: "bg-secondary text-secondary-foreground border-secondary hover:bg-secondary/80",
+              secondary: "bg-secondary text-secondary-foreground border-input hover:bg-secondary/80",
           }
       },
       defaultVariants: {
