@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { searchMovies } from '@/lib/movie-service';
 import type { Movie } from '@/types';
 import Image from 'next/image';
-import { MovieDetailModal, getPosterUrl } from '../movie/movie-detail-modal';
+import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
+import { getPosterUrl } from '@/lib/image-utils';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -76,7 +77,7 @@ function InlineSearchBar() {
           toast({
             variant: "destructive",
             title: "Search Failed",
-            description: "Could not fetch movie results. Please check your API key and try again.",
+            description: "Could not fetch movie results. Please try again later.",
           });
         } finally {
             setLoading(false);
@@ -179,9 +180,9 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <div className="flex items-center gap-2 mr-auto">
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
-                        CB
+                        <Film />
                     </div>
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
                 </div>
                 <div className="flex-1 flex justify-center px-4">
                     <InlineSearchBar />
@@ -189,7 +190,7 @@ export function TopHeader() {
                 <div className="flex items-center gap-2 ml-auto invisible">
                     {/* Placeholder to balance the header */}
                      <div className="h-8 w-8" />
-                    <h1 className="text-2xl font-headline hidden sm:block">CineBook</h1>
+                    <h1 className="text-2xl font-headline hidden sm:block">ReelDeal</h1>
                 </div>
             </div>
         </header>

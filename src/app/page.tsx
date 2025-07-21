@@ -3,8 +3,8 @@
 
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import type { Movie } from '@/types';
-import { getMoviesByCategory, discoverMovies } from '@/lib/movie-service';
+import type { Movie, Genre } from '@/types';
+import { getMoviesByCategory, discoverMovies, getGenres, getLanguages } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,7 +69,11 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
 export default function Home() {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
+    const [genres, setGenres] = React.useState<Genre[]>([]);
+    const [languages, setLanguages] = React.useState<string[]>([]);
     
+    const [selectedGenre, setSelectedGenre] = React.useState('all');
+    const [selectedLanguage, setSelectedLanguage] = React.useState('all');
     const [selectedRecency, setSelectedRecency] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
@@ -79,15 +83,17 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedRecency !== 'all';
+    const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const categoryMoviesData = await Promise.all(
-                    movieCategories.map(category => getMoviesByCategory(category.id))
-                );
+                const [categoryMoviesData, genresData, languagesData] = await Promise.all([
+                    Promise.all(movieCategories.map(category => getMoviesByCategory(category.id))),
+                    getGenres(),
+                    getLanguages()
+                ]);
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -95,6 +101,8 @@ export default function Home() {
                 });
 
                 setMoviesByCat(moviesData);
+                setGenres(genresData);
+                setLanguages(languagesData);
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
@@ -118,6 +126,8 @@ export default function Home() {
             setIsFilteredView(true);
             try {
                 const movies = await discoverMovies({
+                    genreId: selectedGenre,
+                    language: selectedLanguage,
                     recency: selectedRecency,
                 });
                 setFilteredMovies(movies);
@@ -137,9 +147,11 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedRecency, hasActiveFilters])
+    }, [selectedGenre, selectedLanguage, selectedRecency, hasActiveFilters])
 
     const handleClearFilters = () => {
+        setSelectedGenre('all');
+        setSelectedLanguage('all');
         setSelectedRecency('all');
         setIsFilteredView(false);
     }
@@ -157,7 +169,7 @@ export default function Home() {
     };
 
     if (error) {
-        const isDbError = error.includes('SUPABASE_URL') || error.includes('SUPABASE_ANON_KEY');
+        const isDbError = error.includes('SUPABASE_URL') || error.includes('SUPABASE_ANON_KEY') || error.includes('database');
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <h2 className="text-2xl font-bold text-destructive mb-4">
@@ -166,7 +178,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-4 max-w-md">
                     {isDbError 
                         ? "The application couldn't connect to the database. Please ensure your Supabase credentials are configured correctly."
-                        : error
+                        : `An unexpected error occurred: ${error}`
                     }
                 </p>
                 {isDbError && (
@@ -197,6 +209,32 @@ export default function Home() {
                      {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 items-start">
+                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="Genre" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Genres</SelectItem>
+                            {genres.map(genre => (
+                                <SelectItem key={genre.id} value={String(genre.id)}>
+                                    {genre.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger className="w-full" variant="secondary">
+                            <SelectValue placeholder="Language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Languages</SelectItem>
+                            {languages.map(lang => (
+                                <SelectItem key={lang} value={lang}>
+                                    {lang.toUpperCase()}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
                         <SelectTrigger className="w-full" variant="secondary">
                             <SelectValue placeholder="Recency" />

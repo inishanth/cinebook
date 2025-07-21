@@ -9,9 +9,9 @@ import { useWatchlist } from '@/context/watchlist-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
-import { ImdbLogo } from '@/components/icons/rating-logos';
-import { MovieDetailModal, getPosterUrl } from '@/components/movie/movie-detail-modal';
+import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getPosterUrl } from '@/lib/image-utils';
 
 const SwipeCard = ({
   movie,
@@ -71,12 +71,6 @@ const SwipeCard = ({
         <CardContent className="absolute bottom-0 left-0 p-4 text-white w-full">
           <h3 className="text-2xl font-headline font-bold">{movie.title}</h3>
           <p className="text-sm text-muted-foreground mt-1 line-clamp-3">{movie.overview}</p>
-          <div className="flex items-center justify-between mt-4 border-t border-white/20 pt-2">
-            <div className="flex items-center gap-2">
-              <ImdbLogo className="h-5 w-auto" />
-              <span className="font-bold text-sm">{movie.vote_average.toFixed(1)}</span>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -148,7 +142,7 @@ export function SwipeClientPage({ initialMovies, error: initialError }: { initia
             <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] flex flex-col items-center justify-center bg-secondary text-center p-4">
                 <h3 className="text-xl font-headline text-destructive">Error Loading Movies</h3>
                 <p className="text-muted-foreground mt-2">{error}</p>
-                 <p className="text-sm text-muted-foreground">Please make sure you have added your Neon Database URL to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
+                 <p className="text-sm text-muted-foreground">Please make sure you have added your Supabase credentials to a <code className="bg-secondary p-1 rounded">.env.local</code> file.</p>
             </Card>
           ) : movieStack.length > 0 ? (
             movieStack.map((movie, index) => (

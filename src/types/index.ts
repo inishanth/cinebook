@@ -6,10 +6,16 @@ export interface Movie {
   overview: string;
   release_date: string;
   vote_average: number;
+  language: string;
+}
+
+export interface Genre {
+  id: number;
+  name: string;
 }
 
 export interface MovieDetails extends Movie {
-  genres: { id: number; name: string }[];
+  genres: Genre[];
   runtime: number;
   videos: {
     results: {

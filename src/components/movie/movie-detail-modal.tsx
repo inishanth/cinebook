@@ -6,18 +6,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetCl
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
-import { ImdbLogo } from '../icons/rating-logos';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
-
-export const getPosterUrl = (path: string | null, size: 'w92' | 'w500' | 'original' = 'w500') => {
-  return path ? `https://image.tmdb.org/t/p/${size}${path}` : `https://placehold.co/${size === 'w92' ? '92x138' : '500x750'}.png`;
-};
-
-export const getBannerUrl = (path: string | null, size: 'original' | 'w1280' = 'original') => {
-  return path ? `https://image.tmdb.org/t/p/${size}${path}` : 'https://placehold.co/1280x720.png';
-};
+import { getPosterUrl, getBannerUrl } from '@/lib/image-utils';
 
 
 interface MovieDetailModalProps {
