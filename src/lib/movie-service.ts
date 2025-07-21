@@ -120,12 +120,10 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query;
+    let query = supabase.from('movies').select('*, movie_genres!inner(*)');
 
     if (genreId && genreId !== 'all') {
-        query = supabase.from('movie_genres').select('movies(*)').eq('genre_id', genreId);
-    } else {
-        query = supabase.from('movies').select('*');
+       query = query.eq('movie_genres.genre_id', genreId);
     }
 
     if (language && language !== 'all') {
@@ -159,15 +157,8 @@ export const discoverMovies = async ({
     const response = await query
         .order('release_date', { ascending: false })
         .limit(40);
-
-    const data = await handleSupabaseError(response);
-
-    // If we queried through the join table, the data is nested.
-    if (genreId && genreId !== 'all') {
-        return data.map((item: any) => item.movies).filter(Boolean);
-    }
     
-    return data;
+    return await handleSupabaseError(response);
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
