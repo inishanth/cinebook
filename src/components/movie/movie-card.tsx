@@ -3,7 +3,6 @@ import type { Movie } from '@/types';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import { getPosterUrl } from '@/lib/image-utils';
 
 interface MovieCardProps {
   movie: Movie;
@@ -20,7 +19,7 @@ export function MovieCard({ movie, onClick }: MovieCardProps) {
     >
       <div className="rounded-lg overflow-hidden shadow-lg bg-secondary">
         <Image
-          src={getPosterUrl(movie.poster_path)}
+          src={movie.poster_url || 'https://placehold.co/500x750.png'}
           alt={`Poster for ${movie.title}`}
           width={500}
           height={750}

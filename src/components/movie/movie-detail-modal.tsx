@@ -9,7 +9,18 @@ import { useWatchlist } from '@/context/watchlist-context';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
-import { getPosterUrl, getBannerUrl } from '@/lib/image-utils';
+
+const getBannerUrl = (path: string | null) => {
+  if (!path) {
+    return 'https://placehold.co/1280x720.png';
+  }
+  // Assuming backdrop_path is a full URL. If not, construct it.
+  // This is a simple fallback logic.
+  if (path.startsWith('/')) {
+    return `https://image.tmdb.org/t/p/original${path}`;
+  }
+  return path;
+};
 
 
 interface MovieDetailModalProps {

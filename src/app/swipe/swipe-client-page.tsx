@@ -11,7 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getPosterUrl } from '@/lib/image-utils';
 
 const SwipeCard = ({
   movie,
@@ -61,7 +60,7 @@ const SwipeCard = ({
     >
       <Card className="w-[300px] h-[450px] md:w-[350px] md:h-[525px] overflow-hidden shadow-2xl bg-secondary relative">
         <Image
-          src={getPosterUrl(movie.poster_path)}
+          src={movie.poster_url || 'https://placehold.co/350x525.png'}
           alt={movie.title}
           fill
           className="object-cover"

@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { XCircle } from 'lucide-react';
-import { getPosterUrl } from '@/lib/image-utils';
 
 export default function SettingsPage() {
   const { watchlist, removeFromWatchlist } = useWatchlist();
@@ -34,7 +33,7 @@ export default function SettingsPage() {
                   {watchlist.map((movie) => (
                     <div key={movie.id} className="relative group">
                       <Image
-                        src={getPosterUrl(movie.poster_path)}
+                        src={movie.poster_url || 'https://placehold.co/200x300.png'}
                         alt={`Poster for ${movie.title}`}
                         width={200}
                         height={300}

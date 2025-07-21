@@ -14,7 +14,6 @@ import Image from 'next/image';
 import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { getPosterUrl } from '@/lib/image-utils';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -43,7 +42,7 @@ function SearchResults({ results, loading, onMovieClick }: { results: Movie[], l
                     onClick={() => onMovieClick(movie)}
                 >
                     <Image
-                        src={getPosterUrl(movie.poster_path, 'w92')}
+                        src={movie.poster_url || 'https://placehold.co/92x138.png'}
                         alt={movie.title}
                         width={40}
                         height={60}
