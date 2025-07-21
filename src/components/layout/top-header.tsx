@@ -130,7 +130,7 @@ function InlineSearchBar() {
             onFocus={() => {
                 if (searchQuery.trim().length > 2) setShowResults(true);
             }}
-            className="pl-9 pr-9"
+            className="pl-9 pr-9 border border-input"
         />
         {searchQuery && (
           <Button
