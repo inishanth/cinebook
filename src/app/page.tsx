@@ -157,7 +157,7 @@ export default function Home() {
     };
 
     if (error) {
-        const isDbError = error.includes('DATABASE_URL');
+        const isDbError = error.includes('SUPABASE_URL') || error.includes('SUPABASE_ANON_KEY');
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
                 <h2 className="text-2xl font-bold text-destructive mb-4">
@@ -165,7 +165,7 @@ export default function Home() {
                 </h2>
                 <p className="text-muted-foreground mb-4 max-w-md">
                     {isDbError 
-                        ? "The application couldn't connect to the database. Please ensure your DATABASE_URL is configured correctly."
+                        ? "The application couldn't connect to the database. Please ensure your Supabase credentials are configured correctly."
                         : error
                     }
                 </p>
@@ -174,10 +174,11 @@ export default function Home() {
                         <h3 className="font-bold mb-2">How to fix this:</h3>
                         <ol className="list-decimal list-inside space-y-2 text-sm">
                             <li>Create a new file named <code className="bg-background p-1 rounded">.env.local</code> in the root of your project.</li>
-                            <li>Inside this file, add the following line, replacing the placeholder with your actual Neon database URL:</li>
+                            <li>Inside this file, add the following lines, replacing the placeholders with your actual Supabase Project URL and Anon Key:</li>
                             <pre className="bg-background p-2 rounded-md mt-2 overflow-x-auto">
                                 <code className="text-sm">
-                                    DATABASE_URL="your_neon_database_url_here"
+                                    SUPABASE_URL="your_supabase_url_here"<br />
+                                    SUPABASE_ANON_KEY="your_supabase_anon_key_here"
                                 </code>
                             </pre>
                              <li>After saving the file, please restart the application preview.</li>

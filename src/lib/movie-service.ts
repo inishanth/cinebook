@@ -1,79 +1,87 @@
 'use server';
 
-import { Pool } from '@neondatabase/serverless';
+import { createClient } from '@supabase/supabase-js';
 import type { Movie, MovieDetails } from '@/types';
 import { sub, format } from 'date-fns';
 
-let pool: Pool;
+let supabase: ReturnType<typeof createClient>;
 
-function getPool() {
-  if (!pool) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL environment variable is not set');
+function getSupabaseClient() {
+  if (!supabase) {
+    if (!process.env.SUPABASE_URL) {
+      throw new Error('SUPABASE_URL environment variable is not set');
     }
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    if (!process.env.SUPABASE_ANON_KEY) {
+      throw new Error('SUPABASE_ANON_KEY environment variable is not set');
+    }
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
   }
-  return pool;
+  return supabase;
 }
 
-const runQuery = async <T>(query: string, params: any[] = []): Promise<T[]> => {
-  const dbPool = getPool();
-  try {
-    const { rows } = await dbPool.query(query, params);
-    return rows as T[];
-  } catch (error) {
-    console.error('Database Query Error:', error);
-    // Return a more specific error or an empty array
-    if (error instanceof Error) {
-        throw new Error(`Failed to fetch data from the database. Details: ${error.message}`);
-    }
-    throw new Error('An unknown error occurred while fetching data.');
-  } 
-};
+async function handleSupabaseError<T>(response: { data: T; error: any }): Promise<T> {
+  if (response.error) {
+    console.error('Supabase Query Error:', response.error);
+    throw new Error(`Failed to fetch data from Supabase. Details: ${response.error.message}`);
+  }
+  return response.data;
+}
 
 export const getTrendingMovies = async (): Promise<Movie[]> => {
-    const query = `
-        SELECT * FROM movies
-        ORDER BY release_date DESC
-        LIMIT 20;
-    `;
-    return runQuery<Movie>(query);
+    const supabase = getSupabaseClient();
+    const response = await supabase
+        .from('movies')
+        .select('*')
+        .order('release_date', { ascending: false })
+        .limit(20);
+    return handleSupabaseError(response);
 };
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
-    let query = '';
+    const supabase = getSupabaseClient();
+    let query = supabase.from('movies').select('*');
     
     switch(categoryId) {
         case 'popular':
-            query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
+            query = query.order('release_date', { ascending: false });
             break;
         case 'top_rated':
-            query = 'SELECT * FROM movies ORDER BY vote_average DESC LIMIT 20;';
+            query = query.order('vote_average', { ascending: false });
             break;
         case 'upcoming':
-            query = `SELECT * FROM movies WHERE release_date > NOW() ORDER BY release_date ASC LIMIT 20;`;
+            query = query.filter('release_date', 'gt', new Date().toISOString()).order('release_date', { ascending: true });
             break;
         case 'now_playing':
-            query = `SELECT * FROM movies WHERE release_date <= NOW() AND release_date >= NOW() - interval '1 month' ORDER BY release_date DESC LIMIT 20;`;
+            const oneMonthAgo = sub(new Date(), { months: 1 });
+            query = query
+                .filter('release_date', 'lte', new Date().toISOString())
+                .filter('release_date', 'gte', oneMonthAgo.toISOString())
+                .order('release_date', { ascending: false });
             break;
         default:
-             query = 'SELECT * FROM movies ORDER BY release_date DESC LIMIT 20;';
+             query = query.order('release_date', { ascending: false });
     }
 
-    return runQuery<Movie>(query);
+    const response = await query.limit(20);
+    return handleSupabaseError(response);
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
-    const movieQuery = 'SELECT * FROM movies WHERE id = $1;';
-    const movies = await runQuery<Movie>(movieQuery, [movieId]);
+    const supabase = getSupabaseClient();
+    const response = await supabase
+      .from('movies')
+      .select('*')
+      .eq('id', movieId)
+      .single();
+
+    const movie = await handleSupabaseError(response);
     
-    if (movies.length === 0) {
+    if (!movie) {
         throw new Error('Movie not found');
     }
     
-    // Since we only have one table, we return the movie data with empty arrays for related data.
     return {
-        ...movies[0],
+        ...movie,
         genres: [],
         runtime: 120, // Mocked value
         videos: { results: [] },
@@ -84,12 +92,13 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
 
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     if (!query) return [];
-    const searchQuery = `
-        SELECT * FROM movies
-        WHERE title ILIKE $1
-        LIMIT 20;
-    `;
-    return runQuery<Movie>(searchQuery, [`%${query}%`]);
+    const supabase = getSupabaseClient();
+    const response = await supabase
+        .from('movies')
+        .select('*')
+        .ilike('title', `%${query}%`)
+        .limit(20);
+    return handleSupabaseError(response);
 }
 
 export const discoverMovies = async ({
@@ -97,10 +106,8 @@ export const discoverMovies = async ({
 }: {
     recency?: string,
 }): Promise<Movie[]> => {
-    let baseQuery = 'SELECT * FROM movies';
-    const wheres: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const supabase = getSupabaseClient();
+    let query = supabase.from('movies').select('*');
 
     if (recency && recency !== 'all') {
         const today = new Date();
@@ -109,33 +116,26 @@ export const discoverMovies = async ({
         switch (recency) {
             case '6m':
                 fromDate = sub(today, { months: 6 });
-                wheres.push(`release_date >= $${paramIndex++}`);
-                params.push(format(fromDate, 'yyyy-MM-dd'));
+                query = query.filter('release_date', 'gte', format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '1y':
                 fromDate = sub(today, { years: 1 });
-                wheres.push(`release_date >= $${paramIndex++}`);
-                params.push(format(fromDate, 'yyyy-MM-dd'));
+                query = query.filter('release_date', 'gte', format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y':
                 fromDate = sub(today, { years: 5 });
-                wheres.push(`release_date >= $${paramIndex++}`);
-                params.push(format(fromDate, 'yyyy-MM-dd'));
+                query = query.filter('release_date', 'gte', format(fromDate, 'yyyy-MM-dd'));
                 break;
             case '5y+':
                 const fiveYearsAgo = sub(today, { years: 5 });
-                wheres.push(`release_date <= $${paramIndex++}`);
-                params.push(format(fiveYearsAgo, 'yyyy-MM-dd'));
+                query = query.filter('release_date', 'lte', format(fiveYearsAgo, 'yyyy-MM-dd'));
                 break;
         }
     }
     
-    const finalQuery = `
-        ${baseQuery}
-        ${wheres.length > 0 ? 'WHERE ' + wheres.join(' AND ') : ''}
-        ORDER BY release_date DESC
-        LIMIT 40;
-    `;
+    const response = await query
+        .order('release_date', { ascending: false })
+        .limit(40);
     
-    return runQuery<Movie>(finalQuery, params);
+    return handleSupabaseError(response);
 }
