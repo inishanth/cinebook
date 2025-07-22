@@ -34,17 +34,28 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
         .from('movies')
         .select('*')
         .order('release_date', { ascending: false })
-        .limit(20);
+        .limit(25);
     return handleSupabaseError(response);
 };
+
+// Function to shuffle an array
+const shuffleArray = (array: any[]) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     let query = supabase.from('movies').select('*');
+    let shouldShuffle = false;
     
     switch(categoryId) {
         case 'popular':
             query = query.order('vote_count', { ascending: false, nullsFirst: false });
+            shouldShuffle = true;
             break;
         case 'top_rated':
             query = query.gte('vote_count', 10).order('vote_average', { ascending: false, nullsFirst: false });
@@ -63,8 +74,14 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
              query = query.order('release_date', { ascending: false });
     }
 
-    const response = await query.limit(20);
-    return handleSupabaseError(response);
+    const response = await query.limit(25);
+    const movies = await handleSupabaseError(response);
+    
+    if (shouldShuffle) {
+        return shuffleArray(movies);
+    }
+    
+    return movies;
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
@@ -237,3 +254,4 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
+
