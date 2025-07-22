@@ -50,12 +50,10 @@ const shuffleArray = (array: any[]) => {
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     let query = supabase.from('movies').select('*');
-    let shouldShuffle = false;
     
     switch(categoryId) {
         case 'popular':
             query = query.order('vote_count', { ascending: false, nullsFirst: false });
-            shouldShuffle = true;
             break;
         case 'top_rated':
             query = query.gte('vote_count', 10).order('vote_average', { ascending: false, nullsFirst: false });
@@ -67,18 +65,25 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             const oneMonthAgo = sub(new Date(), { months: 1 });
             query = query
                 .filter('release_date', 'lte', new Date().toISOString())
-                .filter('release_date', 'gte', oneMonthAgo.toISOString())
-                .order('vote_average', { ascending: false, nullsFirst: false });
+                .filter('release_date', 'gte', oneMonthAgo.toISOString());
             break;
         default:
              query = query.order('release_date', { ascending: false });
     }
 
     const response = await query.limit(25);
-    const movies = await handleSupabaseError(response);
+    let movies = await handleSupabaseError(response);
     
-    if (shouldShuffle) {
+    if (categoryId === 'popular') {
         return shuffleArray(movies);
+    }
+    
+    if (categoryId === 'now_playing') {
+        return movies.sort((a, b) => {
+            const scoreA = a.vote_average * a.vote_count;
+            const scoreB = b.vote_average * b.vote_count;
+            return scoreA - scoreB;
+        });
     }
     
     return movies;
@@ -139,24 +144,13 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    const hasGenreFilter = genreId && genreId !== 'all';
-    const hasActorFilter = personId && personId !== 'all';
-
-    let joinTables = '';
-    if (hasGenreFilter) {
-        joinTables += ', movie_genres!inner(genre_id)';
-    }
-    if (hasActorFilter) {
-        joinTables += ', movie_cast!inner(person_id)';
-    }
-
-    let query = supabase.from('movies').select(`* ${joinTables}`);
+    let query = supabase.from('movies').select('*, movie_genres!inner(genre_id), movie_cast!inner(person_id)');
     
-    if (hasGenreFilter) {
+    if (genreId && genreId !== 'all') {
         query = query.eq('movie_genres.genre_id', genreId);
     }
 
-    if (hasActorFilter) {
+    if (personId && personId !== 'all') {
         query = query.eq('movie_cast.person_id', personId);
     }
     
