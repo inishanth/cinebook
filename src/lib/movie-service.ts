@@ -122,14 +122,14 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_genres!inner(*), movie_crew!inner(*)');
+    let query = supabase.from('movies').select('*, movie_genres!inner(genre_id), movie_crew!inner(people(name))');
 
     if (genreId && genreId !== 'all') {
        query = query.eq('movie_genres.genre_id', genreId);
     }
     
     if (actorName && actorName !== 'all') {
-        query = query.eq('movie_crew.name', actorName);
+        query = query.eq('movie_crew.people.name', actorName);
     }
 
     if (language && language !== 'all') {
@@ -164,7 +164,19 @@ export const discoverMovies = async ({
         .order('release_date', { ascending: false })
         .limit(40);
     
-    return await handleSupabaseError(response);
+    const data = await handleSupabaseError(response);
+    
+    // The data might contain duplicates if a movie matches multiple criteria in joins.
+    const uniqueMovies: Movie[] = [];
+    const movieIds = new Set();
+    
+    for (const movie of data) {
+        if (!movieIds.has(movie.id)) {
+            uniqueMovies.push(movie);
+            movieIds.add(movie.id);
+        }
+    }
+    return uniqueMovies;
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
@@ -178,9 +190,6 @@ export const getGenres = async (): Promise<Genre[]> => {
 
 export const getLanguages = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
-    // Supabase doesn't have a direct way to select distinct on a column.
-    // We fetch all languages and process them client-side.
-    // A db function would be more efficient for large datasets.
     const response = await supabase
         .from('movies')
         .select('language');
@@ -193,7 +202,7 @@ export const getLanguages = async (): Promise<string[]> => {
 export const getActors = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
     const response = await supabase
-        .from('movie_crew')
+        .from('people')
         .select('name')
         .order('name', { ascending: true });
     
