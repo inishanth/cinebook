@@ -47,9 +47,65 @@ const shuffleArray = (array: any[]) => {
     return array;
 }
 
+const processMovieData = (movies: any[]): Movie[] => {
+    const movieMap = new Map<number, Movie>();
+
+    movies.forEach(m => {
+        if (!movieMap.has(m.id)) {
+            movieMap.set(m.id, {
+                id: m.id,
+                title: m.title,
+                poster_url: m.poster_url,
+                backdrop_path: m.backdrop_path,
+                overview: m.overview,
+                release_date: m.release_date,
+                vote_average: m.vote_average,
+                language: m.language,
+                cast: [],
+                director: null,
+            });
+        }
+
+        const movie = movieMap.get(m.id)!;
+
+        // Add cast
+        if (m.movie_cast && m.movie_cast.cast_members && m.movie_cast.cast_members.name) {
+            if (movie.cast.length < 3) {
+                // simple check to avoid duplicates
+                if (!movie.cast.find(c => c.id === m.movie_cast.person_id)) {
+                    movie.cast.push({ id: m.movie_cast.person_id, name: m.movie_cast.cast_members.name });
+                }
+            }
+        }
+
+        // Add director
+        if (!movie.director && m.movie_crew && m.movie_crew.crew_members && m.movie_crew.job_id === 1) { // Director job_id is 1
+             movie.director = { id: m.movie_crew.person_id, name: m.movie_crew.crew_members.name };
+        }
+    });
+
+    return Array.from(movieMap.values());
+};
+
+
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
-    let query = supabase.from('movies').select('*');
+    let query = supabase.from('movies')
+        .select(`
+            *,
+            movie_cast!inner(
+                person_id,
+                cast_order,
+                cast_members(id, name)
+            ),
+            movie_crew!inner(
+                person_id,
+                job_id,
+                crew_members(id, name)
+            )
+        `)
+        .in('movie_cast.cast_order', [0, 1, 2]) // Top 3 actors
+        .eq('movie_crew.job_id', 1); // Director
     
     switch(categoryId) {
         case 'popular':
@@ -71,22 +127,27 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
              query = query.order('release_date', { ascending: false });
     }
 
-    const response = await query.limit(25);
-    let movies = await handleSupabaseError(response);
-    
+    const response = await query.limit(50); // Fetch more to process
+    let rawMovies = await handleSupabaseError(response);
+    let movies = processMovieData(rawMovies);
+
     if (categoryId === 'popular') {
-        return shuffleArray(movies);
+        movies = shuffleArray(movies);
     }
     
     if (categoryId === 'now_playing') {
-        return movies.sort((a, b) => {
-            const scoreA = a.vote_average * a.vote_count;
-            const scoreB = b.vote_average * b.vote_count;
+        movies = movies.sort((a, b) => {
+            // This data isn't in the new Movie type, so we need to add it back for sorting.
+            const movieA = rawMovies.find(m => m.id === a.id);
+            const movieB = rawMovies.find(m => m.id === b.id);
+            if (!movieA || !movieB) return 0;
+            const scoreA = movieA.vote_average * movieA.vote_count;
+            const scoreB = movieB.vote_average * movieB.vote_count;
             return scoreB - scoreA;
         });
     }
-    
-    return movies;
+
+    return movies.slice(0, 25);
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
