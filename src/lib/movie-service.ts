@@ -68,8 +68,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query
                 .filter('release_date', 'lte', new Date().toISOString())
                 .filter('release_date', 'gte', oneMonthAgo.toISOString())
-                .order('release_date', { ascending: false });
-            shouldShuffle = true;
+                .order('vote_average', { ascending: false, nullsFirst: false });
             break;
         default:
              query = query.order('release_date', { ascending: false });
