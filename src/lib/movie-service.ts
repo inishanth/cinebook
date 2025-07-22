@@ -113,17 +113,23 @@ export const discoverMovies = async ({
     genreId,
     language,
     recency,
+    actorName,
 }: {
     genreId?: string,
     language?: string,
     recency?: string,
+    actorName?: string,
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_genres!inner(*)');
+    let query = supabase.from('movies').select('*, movie_genres!inner(*), movie_cast!inner(actors!inner(*))');
 
     if (genreId && genreId !== 'all') {
        query = query.eq('movie_genres.genre_id', genreId);
+    }
+    
+    if (actorName && actorName !== 'all') {
+        query = query.eq('movie_cast.actors.name', actorName);
     }
 
     if (language && language !== 'all') {
@@ -182,4 +188,18 @@ export const getLanguages = async (): Promise<string[]> => {
     const data = await handleSupabaseError(response);
     const languages = data.map((m: { language: string }) => m.language);
     return [...new Set(languages)].filter(Boolean).sort();
+};
+
+export const getActors = async (): Promise<string[]> => {
+    const supabase = getSupabaseClient();
+    // We are fetching all actors and then getting the unique names.
+    // A database function (e.g., using DISTINCT) would be more performant.
+    const response = await supabase
+        .from('actors')
+        .select('name')
+        .order('name', { ascending: true });
+    
+    const data = await handleSupabaseError(response);
+    const actorNames = data.map((a: { name: string }) => a.name);
+    return [...new Set(actorNames)].filter(Boolean);
 };
