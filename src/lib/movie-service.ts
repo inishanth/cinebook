@@ -82,7 +82,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         return movies.sort((a, b) => {
             const scoreA = a.vote_average * a.vote_count;
             const scoreB = b.vote_average * b.vote_count;
-            return scoreA - scoreB;
+            return scoreB - scoreA;
         });
     }
     
