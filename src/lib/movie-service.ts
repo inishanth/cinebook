@@ -69,6 +69,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
                 .filter('release_date', 'lte', new Date().toISOString())
                 .filter('release_date', 'gte', oneMonthAgo.toISOString())
                 .order('release_date', { ascending: false });
+            shouldShuffle = true;
             break;
         default:
              query = query.order('release_date', { ascending: false });
@@ -254,4 +255,3 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
-
