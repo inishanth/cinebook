@@ -122,14 +122,14 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_genres!inner(*), movie_cast!inner(actors!inner(*))');
+    let query = supabase.from('movies').select('*, movie_genres!inner(*), movie_crew!inner(*)');
 
     if (genreId && genreId !== 'all') {
        query = query.eq('movie_genres.genre_id', genreId);
     }
     
     if (actorName && actorName !== 'all') {
-        query = query.eq('movie_cast.actors.name', actorName);
+        query = query.eq('movie_crew.name', actorName);
     }
 
     if (language && language !== 'all') {
@@ -192,10 +192,8 @@ export const getLanguages = async (): Promise<string[]> => {
 
 export const getActors = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
-    // We are fetching all actors and then getting the unique names.
-    // A database function (e.g., using DISTINCT) would be more performant.
     const response = await supabase
-        .from('actors')
+        .from('movie_crew')
         .select('name')
         .order('name', { ascending: true });
     
