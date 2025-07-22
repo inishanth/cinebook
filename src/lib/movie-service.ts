@@ -122,29 +122,25 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let fromTable = 'movies';
-    let selectString = '*';
-    let query;
+    const hasGenreFilter = genreId && genreId !== 'all';
+    const hasActorFilter = personId && personId !== 'all';
 
-    if (personId && personId !== 'all') {
-        const movieIdsResponse = await supabase
-            .from('movie_cast')
-            .select('movie_id')
-            .eq('person_id', personId)
-            .eq('cast_order', 0);
-        
-        const movieIds = (await handleSupabaseError(movieIdsResponse)).map(m => m.movie_id);
-        
-        if (movieIds.length === 0) return [];
-        
-        query = supabase.from('movies').select('*').in('id', movieIds);
+    let joinTables = '';
+    if (hasGenreFilter) {
+        joinTables += ', movie_genres!inner(genre_id)';
+    }
+    if (hasActorFilter) {
+        joinTables += ', movie_cast!inner(person_id)';
+    }
 
-    } else if (genreId && genreId !== 'all') {
-        fromTable = 'movie_genres';
-        selectString = 'movies(*)';
-        query = supabase.from(fromTable).select(selectString).eq('genre_id', genreId);
-    } else {
-        query = supabase.from('movies').select('*');
+    let query = supabase.from('movies').select(`* ${joinTables}`);
+    
+    if (hasGenreFilter) {
+        query = query.eq('movie_genres.genre_id', genreId);
+    }
+
+    if (hasActorFilter) {
+        query = query.eq('movie_cast.person_id', personId);
     }
     
     if (language && language !== 'all') {
@@ -179,12 +175,8 @@ export const discoverMovies = async ({
         .order('release_date', { ascending: false })
         .limit(40);
     
-    let data = await handleSupabaseError(response);
+    const data = await handleSupabaseError(response);
     
-    if (selectString !== '*') {
-        data = data.map((item: any) => item.movies).filter(Boolean);
-    }
-
     const uniqueMovies: Movie[] = [];
     const movieIds = new Set();
     
