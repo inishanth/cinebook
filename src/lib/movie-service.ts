@@ -79,8 +79,8 @@ const processMovieData = (movies: any[]): Movie[] => {
         }
 
         // Add director
-        if (!movie.director && m.movie_crew && m.movie_crew.crew_members && m.movie_crew.job === 'Director') {
-             movie.director = { id: m.movie_crew.person_id, name: m.movie_crew.crew_members.name };
+        if (!movie.director && m.movie_crew && m.movie_crew.cast_members && m.movie_crew.job === 'Director') {
+             movie.director = { id: m.movie_crew.person_id, name: m.movie_crew.cast_members.name };
         }
     });
 
@@ -101,7 +101,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             movie_crew!inner(
                 person_id,
                 job,
-                crew_members(id, name)
+                cast_members(id, name)
             )
         `)
         .in('movie_cast.cast_order', [0, 1, 2]); // Top 3 actors
