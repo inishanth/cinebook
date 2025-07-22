@@ -1,3 +1,4 @@
+
 export interface Movie {
   id: number;
   title: string;
@@ -10,6 +11,11 @@ export interface Movie {
 }
 
 export interface Genre {
+  id: number;
+  name: string;
+}
+
+export interface Person {
   id: number;
   name: string;
 }

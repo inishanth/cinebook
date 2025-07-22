@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
-import type { Movie, MovieDetails, Genre } from '@/types';
+import type { Movie, MovieDetails, Genre, Person } from '@/types';
 import { sub, format } from 'date-fns';
 
 let supabase: ReturnType<typeof createClient>;
@@ -113,20 +113,34 @@ export const discoverMovies = async ({
     genreId,
     language,
     recency,
+    personId,
 }: {
     genreId?: string,
     language?: string,
     recency?: string,
+    personId?: string,
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
+    let fromTable = 'movies';
+    let selectString = '*';
     let query;
 
-    if (genreId && genreId !== 'all') {
-        // If filtering by genre, we need a join
-        query = supabase.from('movie_genres').select('movies(*)').eq('genre_id', genreId);
+    // If filtering by genre or person, we start from a different table.
+    if ((genreId && genreId !== 'all') || (personId && personId !== 'all')) {
+      if (personId && personId !== 'all') {
+        fromTable = 'movie_cast';
+        selectString = 'movies(*)';
+        query = supabase.from(fromTable).select(selectString).eq('person_id', personId).eq('cast_order', 0);
+      } else if (genreId && genreId !== 'all') {
+        fromTable = 'movie_genres';
+        selectString = 'movies(*)';
+        query = supabase.from(fromTable).select(selectString).eq('genre_id', genreId);
+      } else {
+        query = supabase.from(fromTable).select(selectString);
+      }
     } else {
-        query = supabase.from('movies').select('*');
+        query = supabase.from(fromTable).select(selectString);
     }
     
     if (language && language !== 'all') {
@@ -163,8 +177,8 @@ export const discoverMovies = async ({
     
     let data = await handleSupabaseError(response);
     
-    // If we queried from movie_genres, the data is nested.
-    if (genreId && genreId !== 'all') {
+    // If we queried from a join table, the data is nested.
+    if (fromTable !== 'movies') {
         data = data.map((item: any) => item.movies).filter(Boolean);
     }
 
@@ -173,10 +187,10 @@ export const discoverMovies = async ({
     const movieIds = new Set();
     
     for (const movie of data) {
-        if (!movieIds.has(movie.id)) {
-            uniqueMovies.push(movie);
-            movieIds.add(movie.id);
-        }
+      if (movie && !movieIds.has(movie.id)) {
+          uniqueMovies.push(movie);
+          movieIds.add(movie.id);
+      }
     }
     return uniqueMovies;
 }
@@ -199,4 +213,23 @@ export const getLanguages = async (): Promise<string[]> => {
     const data = await handleSupabaseError(response);
     const languages = data.map((m: { language: string }) => m.language);
     return [...new Set(languages)].filter(Boolean).sort();
+};
+
+export const getLeadActors = async (): Promise<Person[]> => {
+    const supabase = getSupabaseClient();
+    const response = await supabase
+        .from('movie_cast')
+        .select('people:person_id(id, name)')
+        .eq('cast_order', 0);
+    
+    const data = await handleSupabaseError(response);
+
+    const personMap = new Map<number, Person>();
+    data.forEach((item: any) => {
+        if (item.people && !personMap.has(item.people.id)) {
+            personMap.set(item.people.id, item.people);
+        }
+    });
+
+    return Array.from(personMap.values()).sort((a,b) => a.name.localeCompare(b.name));
 };
