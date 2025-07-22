@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import type { Movie, Genre } from '@/types';
-import { getMoviesByCategory, discoverMovies, getGenres, getLanguages, getActors } from '@/lib/movie-service';
+import { getMoviesByCategory, discoverMovies, getGenres, getLanguages } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,12 +71,10 @@ export default function Home() {
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>({});
     const [genres, setGenres] = React.useState<Genre[]>([]);
     const [languages, setLanguages] = React.useState<string[]>([]);
-    const [actors, setActors] = React.useState<string[]>([]);
     
     const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
     const [selectedRecency, setSelectedRecency] = React.useState('all');
-    const [selectedActor, setSelectedActor] = React.useState('all');
     
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
     const [isFilteredView, setIsFilteredView] = React.useState(false);
@@ -85,17 +83,16 @@ export default function Home() {
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
-    const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
+    const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all';
     
     React.useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setLoading(true);
-                const [categoryMoviesData, genresData, languagesData, actorsData] = await Promise.all([
+                const [categoryMoviesData, genresData, languagesData] = await Promise.all([
                     Promise.all(movieCategories.map(category => getMoviesByCategory(category.id))),
                     getGenres(),
                     getLanguages(),
-                    getActors()
                 ]);
 
                 const moviesData: Record<string, Movie[]> = {};
@@ -106,7 +103,6 @@ export default function Home() {
                 setMoviesByCat(moviesData);
                 setGenres(genresData);
                 setLanguages(languagesData);
-                setActors(actorsData);
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
@@ -133,7 +129,6 @@ export default function Home() {
                     genreId: selectedGenre,
                     language: selectedLanguage,
                     recency: selectedRecency,
-                    actorName: selectedActor,
                 });
                 setFilteredMovies(movies);
             } catch(e) {
@@ -152,13 +147,12 @@ export default function Home() {
             clearTimeout(handler);
         };
 
-    }, [selectedGenre, selectedLanguage, selectedRecency, selectedActor, hasActiveFilters])
+    }, [selectedGenre, selectedLanguage, selectedRecency, hasActiveFilters])
 
     const handleClearFilters = () => {
         setSelectedGenre('all');
         setSelectedLanguage('all');
         setSelectedRecency('all');
-        setSelectedActor('all');
         setIsFilteredView(false);
     }
 
@@ -249,19 +243,6 @@ export default function Home() {
                             {recencyOptions.map(opt => (
                                 <SelectItem key={opt.value} value={opt.value}>
                                     {opt.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                     <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full" variant="secondary">
-                            <SelectValue placeholder="Actor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="all">All Actors</SelectItem>
-                            {actors.map(actor => (
-                                <SelectItem key={actor} value={actor}>
-                                    {actor}
                                 </SelectItem>
                             ))}
                         </SelectContent>

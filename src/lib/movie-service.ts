@@ -113,25 +113,22 @@ export const discoverMovies = async ({
     genreId,
     language,
     recency,
-    actorName,
 }: {
     genreId?: string,
     language?: string,
     recency?: string,
-    actorName?: string,
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_cast!inner(cast_members(name))');
+    let query;
 
     if (genreId && genreId !== 'all') {
-       query = query.eq('movie_genres.genre_id', genreId);
+        // If filtering by genre, we need a join
+        query = supabase.from('movie_genres').select('movies(*)').eq('genre_id', genreId);
+    } else {
+        query = supabase.from('movies').select('*');
     }
     
-    if (actorName && actorName !== 'all') {
-        query = query.eq('movie_cast.cast_members.name', actorName);
-    }
-
     if (language && language !== 'all') {
         query = query.eq('language', language);
     }
@@ -164,8 +161,13 @@ export const discoverMovies = async ({
         .order('release_date', { ascending: false })
         .limit(40);
     
-    const data = await handleSupabaseError(response);
+    let data = await handleSupabaseError(response);
     
+    // If we queried from movie_genres, the data is nested.
+    if (genreId && genreId !== 'all') {
+        data = data.map((item: any) => item.movies).filter(Boolean);
+    }
+
     // The data might contain duplicates if a movie matches multiple criteria in joins.
     const uniqueMovies: Movie[] = [];
     const movieIds = new Set();
@@ -198,16 +200,3 @@ export const getLanguages = async (): Promise<string[]> => {
     const languages = data.map((m: { language: string }) => m.language);
     return [...new Set(languages)].filter(Boolean).sort();
 };
-
-export const getActors = async (): Promise<string[]> => {
-    const supabase = getSupabaseClient();
-    const response = await supabase
-        .from('cast_members')
-        .select('name')
-        .order('name', { ascending: true });
-    
-    const data = await handleSupabaseError(response);
-    const actorNames = data.map((a: { name: string }) => a.name);
-    return [...new Set(actorNames)].filter(Boolean);
-};
-
