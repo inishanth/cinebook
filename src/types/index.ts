@@ -8,8 +8,6 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   language: string;
-  cast?: Person[];
-  director?: Person | null;
 }
 
 export interface Genre {
