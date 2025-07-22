@@ -126,21 +126,25 @@ export const discoverMovies = async ({
     let selectString = '*';
     let query;
 
-    // If filtering by genre or person, we start from a different table.
-    if ((genreId && genreId !== 'all') || (personId && personId !== 'all')) {
-      if (personId && personId !== 'all') {
-        fromTable = 'movie_cast';
-        selectString = 'movies(*)';
-        query = supabase.from(fromTable).select(selectString).eq('person_id', personId).eq('cast_order', 0);
-      } else if (genreId && genreId !== 'all') {
+    if (personId && personId !== 'all') {
+        const movieIdsResponse = await supabase
+            .from('movie_cast')
+            .select('movie_id')
+            .eq('person_id', personId)
+            .eq('cast_order', 0);
+        
+        const movieIds = (await handleSupabaseError(movieIdsResponse)).map(m => m.movie_id);
+        
+        if (movieIds.length === 0) return [];
+        
+        query = supabase.from('movies').select('*').in('id', movieIds);
+
+    } else if (genreId && genreId !== 'all') {
         fromTable = 'movie_genres';
         selectString = 'movies(*)';
         query = supabase.from(fromTable).select(selectString).eq('genre_id', genreId);
-      } else {
-        query = supabase.from(fromTable).select(selectString);
-      }
     } else {
-        query = supabase.from(fromTable).select(selectString);
+        query = supabase.from('movies').select('*');
     }
     
     if (language && language !== 'all') {
@@ -177,12 +181,10 @@ export const discoverMovies = async ({
     
     let data = await handleSupabaseError(response);
     
-    // If we queried from a join table, the data is nested.
-    if (fromTable !== 'movies') {
+    if (selectString !== '*') {
         data = data.map((item: any) => item.movies).filter(Boolean);
     }
 
-    // The data might contain duplicates if a movie matches multiple criteria in joins.
     const uniqueMovies: Movie[] = [];
     const movieIds = new Set();
     
@@ -215,21 +217,31 @@ export const getLanguages = async (): Promise<string[]> => {
     return [...new Set(languages)].filter(Boolean).sort();
 };
 
+
 export const getLeadActors = async (): Promise<Person[]> => {
     const supabase = getSupabaseClient();
-    const response = await supabase
+    const { data: leadCast, error } = await supabase
         .from('movie_cast')
-        .select('people:person_id(id, name)')
-        .eq('cast_order', 0);
+        .select('person_id')
+        .eq('cast_order', 0)
+        .limit(100);
+
+    if (error) {
+        console.error('Supabase Error getting lead cast:', error);
+        throw new Error(error.message);
+    }
+
+    const personIds = [...new Set(leadCast.map(c => c.person_id))];
+
+    const { data: people, error: peopleError } = await supabase
+        .from('cast_members')
+        .select('id, name')
+        .in('id', personIds);
+
+    if (peopleError) {
+        console.error('Supabase Error getting cast members:', peopleError);
+        throw new Error(peopleError.message);
+    }
     
-    const data = await handleSupabaseError(response);
-
-    const personMap = new Map<number, Person>();
-    data.forEach((item: any) => {
-        if (item.people && !personMap.has(item.people.id)) {
-            personMap.set(item.people.id, item.people);
-        }
-    });
-
-    return Array.from(personMap.values()).sort((a,b) => a.name.localeCompare(b.name));
+    return people.sort((a,b) => a.name.localeCompare(b.name));
 };
