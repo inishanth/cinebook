@@ -122,14 +122,14 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_genres!inner(genre_id), movie_crew!inner(people(name))');
+    let query = supabase.from('movies').select('*, movie_cast!inner(cast_members(name))');
 
     if (genreId && genreId !== 'all') {
        query = query.eq('movie_genres.genre_id', genreId);
     }
     
     if (actorName && actorName !== 'all') {
-        query = query.eq('movie_crew.people.name', actorName);
+        query = query.eq('movie_cast.cast_members.name', actorName);
     }
 
     if (language && language !== 'all') {
@@ -202,7 +202,7 @@ export const getLanguages = async (): Promise<string[]> => {
 export const getActors = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
     const response = await supabase
-        .from('people')
+        .from('cast_members')
         .select('name')
         .order('name', { ascending: true });
     
@@ -210,3 +210,4 @@ export const getActors = async (): Promise<string[]> => {
     const actorNames = data.map((a: { name: string }) => a.name);
     return [...new Set(actorNames)].filter(Boolean);
 };
+
