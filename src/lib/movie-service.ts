@@ -44,10 +44,10 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
     
     switch(categoryId) {
         case 'popular':
-            query = query.gte('vote_count', 10).order('vote_average', { ascending: false, nullsFirst: false });
+            query = query.order('vote_count', { ascending: false, nullsFirst: false });
             break;
         case 'top_rated':
-            query = query.order('vote_average', { ascending: false, nullsFirst: false });
+            query = query.gte('vote_count', 10).order('vote_average', { ascending: false, nullsFirst: false });
             break;
         case 'upcoming':
             query = query.filter('release_date', 'gt', new Date().toISOString()).order('release_date', { ascending: true });
