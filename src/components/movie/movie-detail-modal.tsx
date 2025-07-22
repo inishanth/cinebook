@@ -8,8 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, Heart, Clock, Tags, X, Star, Sparkles } from 'lucide-react';
-import { getMovieRating } from '@/ai/flows/get-movie-rating-flow';
+import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
 
 
 const getPosterUrl = (path: string | null) => {
@@ -56,15 +55,12 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   const { addToWatchlist, isMovieInWatchlist } = useWatchlist();
   const [details, setDetails] = React.useState<MovieDetails | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [aiRating, setAiRating] = React.useState<number | null>(null);
-  const [loadingAiRating, setLoadingAiRating] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
     if (isOpen && initialMovie) {
       setLoading(true);
       setDetails(null);
-      setAiRating(null);
 
       getMovieDetails(initialMovie.id)
         .then(setDetails)
@@ -78,15 +74,6 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
             onClose();
         })
         .finally(() => setLoading(false));
-
-        setLoadingAiRating(true);
-        getMovieRating({ title: initialMovie.title })
-            .then(res => setAiRating(res.rating))
-            .catch(err => {
-                console.error("Failed to get AI rating", err);
-                // Don't bother the user with a toast for this non-critical feature
-            })
-            .finally(() => setLoadingAiRating(false));
 
     }
   }, [isOpen, initialMovie, toast, onClose]);
@@ -149,14 +136,6 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                            <span className="text-lg font-bold">{movie.vote_average.toFixed(1)}</span>
                            <span className="text-sm text-muted-foreground">/ 10</span>
                         </div>
-                         {loadingAiRating && <Skeleton className="h-8 w-32" />}
-                         {aiRating !== null && !loadingAiRating && (
-                            <div className="flex items-center gap-2" title="Gemini Web Rating">
-                                <Sparkles className="w-6 h-6 text-cyan-400 fill-cyan-400" />
-                                <span className="text-lg font-bold">{aiRating.toFixed(1)}</span>
-                                <span className="text-sm text-muted-foreground">/ 10</span>
-                            </div>
-                        )}
                     </div>
 
                     <SheetDescription className="text-white/90 text-base max-w-prose">{movie.overview}</SheetDescription>
