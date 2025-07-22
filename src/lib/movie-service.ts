@@ -70,7 +70,7 @@ const processMovieData = (movies: any[]): Movie[] => {
 
         // Add cast
         if (m.movie_cast && m.movie_cast.cast_members && m.movie_cast.cast_members.name) {
-            if (movie.cast.length < 3) {
+            if (movie.cast && movie.cast.length < 3) {
                 // simple check to avoid duplicates
                 if (!movie.cast.find(c => c.id === m.movie_cast.person_id)) {
                     movie.cast.push({ id: m.movie_cast.person_id, name: m.movie_cast.cast_members.name });
@@ -79,7 +79,7 @@ const processMovieData = (movies: any[]): Movie[] => {
         }
 
         // Add director
-        if (!movie.director && m.movie_crew && m.movie_crew.crew_members && m.movie_crew.job_id === 1) { // Director job_id is 1
+        if (!movie.director && m.movie_crew && m.movie_crew.crew_members && m.movie_crew.job === 'Director') {
              movie.director = { id: m.movie_crew.person_id, name: m.movie_crew.crew_members.name };
         }
     });
@@ -100,13 +100,12 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             ),
             movie_crew!inner(
                 person_id,
-                job_id,
+                job,
                 crew_members(id, name)
             )
         `)
-        .in('movie_cast.cast_order', [0, 1, 2]) // Top 3 actors
-        .eq('movie_crew.job_id', 1); // Director
-    
+        .in('movie_cast.cast_order', [0, 1, 2]); // Top 3 actors
+        
     switch(categoryId) {
         case 'popular':
             query = query.order('vote_count', { ascending: false, nullsFirst: false });
@@ -127,11 +126,11 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
              query = query.order('release_date', { ascending: false });
     }
 
-    const response = await query.limit(50); // Fetch more to process
+    const response = await query.limit(100); // Fetch more to process and get directors
     let rawMovies = await handleSupabaseError(response);
     let movies = processMovieData(rawMovies);
 
-    if (categoryId === 'popular') {
+    if (categoryId === 'popular' || categoryId === 'now_playing') {
         movies = shuffleArray(movies);
     }
     
@@ -140,7 +139,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             // This data isn't in the new Movie type, so we need to add it back for sorting.
             const movieA = rawMovies.find(m => m.id === a.id);
             const movieB = rawMovies.find(m => m.id === b.id);
-            if (!movieA || !movieB) return 0;
+            if (!movieA || !movieB || !movieA.vote_count || !movieB.vote_count) return 0;
             const scoreA = movieA.vote_average * movieA.vote_count;
             const scoreB = movieB.vote_average * movieB.vote_count;
             return scoreB - scoreA;
