@@ -18,7 +18,7 @@ const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
     { id: 'upcoming', title: 'Upcoming' },
-    { id: 'now_playing', title: 'Now Playing' },
+    { id: 'recently_released', title: 'Recently Released' },
 ];
 
 const recencyOptions = [

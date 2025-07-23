@@ -62,7 +62,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         case 'upcoming':
             query = query.filter('release_date', 'gt', new Date().toISOString()).order('release_date', { ascending: true });
             break;
-        case 'now_playing':
+        case 'recently_released':
             const oneMonthAgo = sub(new Date(), { months: 1 });
             query = query
                 .filter('release_date', 'lte', new Date().toISOString())
@@ -79,11 +79,11 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         movies = shuffleArray(movies);
     }
     
-    if (categoryId === 'now_playing') {
+    if (categoryId === 'recently_released') {
         movies = movies.sort((a, b) => {
             const scoreA = a.vote_average * a.vote_count;
             const scoreB = b.vote_average * b.vote_count;
-            return scoreB - scoreA;
+            return scoreB - scoreA; // descending order
         });
     }
 
