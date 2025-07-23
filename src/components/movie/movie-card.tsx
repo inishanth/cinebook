@@ -23,8 +23,6 @@ export function MovieCard({ movie, onClick, loading = false }: MovieCardProps) {
               <Skeleton className="w-full h-60 rounded-lg" />
               <div className="mt-2 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-3 w-2/3" />
               </div>
           </div>
       )
@@ -55,24 +53,6 @@ export function MovieCard({ movie, onClick, loading = false }: MovieCardProps) {
       </div>
       <div className="mt-2 px-1">
         <h3 className="font-bold text-sm truncate text-primary group-hover:text-white" title={movie.title}>{movie.title}</h3>
-        
-        {movie.director && (
-             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                <Film className="w-3 h-3 shrink-0" />
-                <span className="truncate" title={movie.director}>
-                    {movie.director}
-                </span>
-            </div>
-        )}
-
-        {movie.cast && movie.cast.length > 0 && (
-             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                 <User className="w-3 h-3 shrink-0" />
-                <span className="truncate" title={movie.cast.join(', ')}>
-                    {movie.cast.join(', ')}
-                </span>
-            </div>
-        )}
       </div>
     </motion.div>
   );
