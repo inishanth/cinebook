@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import * as React from 'react';
 import type { Movie, MovieDetails } from '@/types';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useWatchlist } from '@/context/watchlist-context';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { ExternalLink, Heart, Clock, Tags, X, Star } from 'lucide-react';
+import { ExternalLink, Heart, Clock, Tags, X, Star, Film, Users } from 'lucide-react';
 
 
 const getPosterUrl = (path: string | null) => {
@@ -85,6 +86,9 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   const trailer = details?.videos?.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
   const genres = details?.genres?.map(g => g.name).join(', ');
   
+  const director = details?.director || initialMovie?.director;
+  const cast = details?.cast || initialMovie?.cast;
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
@@ -138,7 +142,28 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                         </div>
                     </div>
 
-                    <SheetDescription className="text-white/90 text-base max-w-prose">{movie.overview}</SheetDescription>
+                    <div className="space-y-3 text-white/90">
+                      {director && (
+                        <div className="flex items-start gap-3">
+                           <Film className="w-5 h-5 mt-1 shrink-0" />
+                           <div>
+                              <h4 className="font-semibold text-white">Director</h4>
+                              <p className="text-muted-foreground">{director}</p>
+                           </div>
+                        </div>
+                      )}
+                      {cast && cast.length > 0 && (
+                         <div className="flex items-start gap-3">
+                           <Users className="w-5 h-5 mt-1 shrink-0" />
+                           <div>
+                              <h4 className="font-semibold text-white">Starring</h4>
+                              <p className="text-muted-foreground">{cast.join(', ')}</p>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <SheetDescription className="text-white/90 text-base max-w-prose pt-2">{movie.overview}</SheetDescription>
                     
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {trailer && (

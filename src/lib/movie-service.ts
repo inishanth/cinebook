@@ -164,8 +164,11 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
     // The query above returns genres in a nested structure. We need to flatten it.
     const genres = (movieData.genres || []).map((g: any) => g.genres).filter(Boolean);
 
+    const credits = await getMovieCredits(movieId);
+
     return {
         ...movieData,
+        ...credits,
         genres,
         videos: { results: [] }, // Mocked as not in schema
         credits: { cast: [], crew: [] }, // Mocked as not in schema
@@ -181,7 +184,19 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
         .select('*')
         .ilike('title', `%${query}%`)
         .limit(20);
-    return handleSupabaseError(response);
+    const movies = await handleSupabaseError(response);
+
+    const moviesWithCredits = await Promise.all(
+        movies.map(async (movie) => {
+            const credits = await getMovieCredits(movie.id);
+            return {
+                ...movie,
+                director: credits.director,
+                cast: credits.cast,
+            };
+        })
+    );
+    return moviesWithCredits;
 }
 
 export const discoverMovies = async ({
@@ -244,8 +259,10 @@ export const discoverMovies = async ({
     const uniqueMovies: Movie[] = [];
     const movieIds = new Set();
     
-    for (const movie of data) {
-      if (movie && !movieIds.has(movie.id)) {
+    for (const rawMovie of data) {
+      if (rawMovie && !movieIds.has(rawMovie.id)) {
+          const credits = await getMovieCredits(rawMovie.id);
+          const movie = { ...rawMovie, ...credits };
           uniqueMovies.push(movie);
           movieIds.add(movie.id);
       }
