@@ -47,6 +47,47 @@ const shuffleArray = (array: any[]) => {
     return array;
 }
 
+
+export const getMovieCredits = async (movieId: number): Promise<{ director: string | null; cast: string[] }> => {
+    const supabase = getSupabaseClient();
+
+    // Get Director
+    const { data: directorData, error: directorError } = await supabase
+        .from('movie_crew')
+        .select(`
+            job,
+            crew ( name )
+        `)
+        .eq('movie_id', movieId)
+        .eq('job', 'Director')
+        .limit(1)
+        .single();
+    
+    if (directorError && directorError.code !== 'PGRST116') { // Ignore 'single row not found'
+        console.error('Error fetching director:', directorError);
+    }
+    const director = directorData?.crew?.name || null;
+
+    // Get Top 3 Cast
+    const { data: castData, error: castError } = await supabase
+        .from('movie_cast')
+        .select(`
+            cast_order,
+            cast_members ( name )
+        `)
+        .eq('movie_id', movieId)
+        .order('cast_order', { ascending: true })
+        .limit(3);
+
+    if (castError) {
+        console.error('Error fetching cast:', castError);
+    }
+    
+    const cast = castData?.map(c => c.cast_members.name).filter(Boolean) || [];
+    
+    return { director, cast };
+}
+
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     let query = supabase.from('movies')
@@ -83,11 +124,22 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         movies = movies.sort((a, b) => {
             const scoreA = a.vote_average * a.vote_count;
             const scoreB = b.vote_average * b.vote_count;
-            return scoreB - scoreA; // descending order
+            return scoreB - scoreA;
         });
     }
 
-    return movies;
+    const moviesWithCredits = await Promise.all(
+        movies.map(async (movie) => {
+            const credits = await getMovieCredits(movie.id);
+            return {
+                ...movie,
+                director: credits.director,
+                cast: credits.cast,
+            };
+        })
+    );
+
+    return moviesWithCredits;
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
