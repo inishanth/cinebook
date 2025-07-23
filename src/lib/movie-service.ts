@@ -76,8 +76,8 @@ export const getMovieCredits = async (movieId: number): Promise<{ director: stri
             cast_members ( name )
         `)
         .eq('movie_id', movieId)
-        .order('cast_order', { ascending: true })
-        .limit(3);
+        .in('cast_order', [0, 1, 2])
+        .order('cast_order', { ascending: true });
 
     if (castError) {
         console.error('Error fetching cast:', castError);
@@ -161,8 +161,14 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
         throw new Error('Movie not found');
     }
     
-    // The query above returns genres in a nested structure. We need to flatten it.
-    const genres = (movieData.genres || []).map((g: any) => g.genres).filter(Boolean);
+    const genreMap = new Map();
+    (movieData.genres || []).forEach((g: any) => {
+        if(g.genres) {
+            genreMap.set(g.genres.id, g.genres);
+        }
+    });
+
+    const genres = Array.from(genreMap.values());
 
     const credits = await getMovieCredits(movieId);
 
