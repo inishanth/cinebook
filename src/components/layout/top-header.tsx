@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
+import Link from 'next/link';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -177,12 +178,12 @@ export function TopHeader() {
             scrolled && "shadow-lg shadow-black/30"
             )}>
             <div className="container flex h-16 items-center">
-                <div className="flex items-center gap-2 mr-auto">
+                <Link href="/" className="flex items-center gap-2 mr-auto">
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
                         CB
                     </div>
                     <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
-                </div>
+                </Link>
                 <div className="flex-1 flex justify-center px-4">
                     <InlineSearchBar />
                 </div>
