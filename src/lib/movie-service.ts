@@ -153,10 +153,10 @@ export const discoverMovies = async ({
     const supabase = getSupabaseClient();
 
     const params: any = {
-      genre_id: genreId && genreId !== 'all' ? parseInt(genreId, 10) : null,
-      person_id: personId && personId !== 'all' ? parseInt(personId, 10) : null,
-      language: language && language !== 'all' ? language : null,
-      recency: recency && recency !== 'all' ? recency : null,
+      p_genre_id: genreId && genreId !== 'all' ? parseInt(genreId, 10) : null,
+      p_person_id: personId && personId !== 'all' ? parseInt(personId, 10) : null,
+      p_language: language && language !== 'all' ? language : null,
+      p_recency: recency && recency !== 'all' ? recency : null,
     };
     
     const response = await supabase.rpc('get_filtered_movies', params);
