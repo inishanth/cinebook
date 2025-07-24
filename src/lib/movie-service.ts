@@ -152,35 +152,49 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    const params: any = {
-        p_limit: 40,
-        p_genre_id: null,
-        p_person_id: null,
-        p_language: null,
-        p_recency: null,
-    };
+    let query = supabase.from('movies').select(`
+        *,
+        movie_genres!inner(genre_id),
+        movie_cast!inner(person_id)
+    `);
 
     if (genreId && genreId !== 'all') {
-        params.p_genre_id = parseInt(genreId);
+        query = query.eq('movie_genres.genre_id', parseInt(genreId));
     }
     if (personId && personId !== 'all') {
-        params.p_person_id = parseInt(personId);
+        query = query.eq('movie_cast.person_id', parseInt(personId));
     }
     if (language && language !== 'all') {
-        params.p_language = language;
+        query = query.eq('language', language);
     }
     if (recency && recency !== 'all') {
-        params.p_recency = recency;
+        const now = new Date();
+        let fromDate: Date;
+        switch(recency) {
+            case '6m':
+                fromDate = sub(now, { months: 6 });
+                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
+                break;
+            case '1y':
+                fromDate = sub(now, { years: 1 });
+                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
+                break;
+            case '5y':
+                fromDate = sub(now, { years: 5 });
+                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
+                break;
+            case '5y+':
+                fromDate = sub(now, { years: 5 });
+                query = query.lt('release_date', format(fromDate, 'yyyy-MM-dd'));
+                break;
+        }
     }
-
-    const { data, error } = await supabase.rpc('discover_movies', params);
     
-    if (error) {
-        console.error('Supabase RPC Error:', error);
-        throw new Error(`Failed to fetch discovered movies. Details: ${error.message}`);
-    }
+    query = query.limit(40).order('vote_count', { ascending: false, nullsFirst: false });
 
-    return data as Movie[];
+    const response = await query;
+
+    return handleSupabaseError(response);
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
