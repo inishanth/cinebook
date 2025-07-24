@@ -109,18 +109,15 @@ export default function Home() {
 
     React.useEffect(() => {
         const fetchMovieCategories = async () => {
+            setLoadingMovies(true);
             try {
-                setLoadingMovies(true);
-                const categoryMoviesData = await Promise.all(
-                    movieCategories.map(category => getMoviesByCategory(category.id))
-                );
-
-                const moviesData: Record<string, Movie[]> = {};
-                categoryMoviesData.forEach((movies, index) => {
-                    moviesData[movieCategories[index].title] = movies;
-                });
-
-                setMoviesByCat(moviesData);
+                for (const category of movieCategories) {
+                    const movies = await getMoviesByCategory(category.id);
+                    setMoviesByCat((prev) => ({
+                        ...prev,
+                        [category.title]: movies,
+                    }));
+                }
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
@@ -305,14 +302,14 @@ export default function Home() {
                     animate="visible"
                     className="flex flex-col space-y-12"
                 >
-                    {loadingMovies ? (
+                    {loadingMovies && Object.keys(moviesByCat).length === 0 ? (
                         <>
                             {movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)}
                         </>
                     ) : (
                         <>
                             {movieCategories.map((cat) => (
-                                moviesByCat[cat.title] && moviesByCat[cat.title].length > 0 && (
+                                moviesByCat[cat.title] && moviesByCat[cat.title].length > 0 ? (
                                     <motion.div key={cat.title} variants={itemVariants}>
                                         <MovieCategoryRow
                                             title={cat.title}
@@ -320,6 +317,8 @@ export default function Home() {
                                             onMovieClick={handleOpenModal}
                                         />
                                     </motion.div>
+                                ) : (
+                                   !loadingMovies && !moviesByCat[cat.title] ? null : <CategoryRowSkeleton key={cat.id} />
                                 )
                             ))}
                         </>
@@ -335,5 +334,3 @@ export default function Home() {
         </>
     );
 }
-
-    
