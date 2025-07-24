@@ -31,11 +31,30 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    // Step 1: Get movie IDs for the category
+    // The categoryId from the frontend is a string like 'popular'. 
+    // We need to find the numeric ID from the 'categories' table first.
+    const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', categoryId)
+        .single();
+
+    if (categoryError) {
+        console.error('Error fetching category ID:', categoryError);
+        throw new Error(`Could not find category: ${categoryId}. Details: ${categoryError.message}`);
+    }
+
+    if (!categoryData) {
+        return [];
+    }
+
+    const numericCategoryId = categoryData.id;
+
+    // Step 1: Get movie IDs for the category using the numeric ID
     const { data: mappingData, error: mappingError } = await supabase
         .from('movie_categories_mapping')
         .select('movie_id')
-        .eq('category_id', categoryId)
+        .eq('category_id', numericCategoryId)
         .limit(20);
 
     if (mappingError) {
