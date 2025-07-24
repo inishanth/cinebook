@@ -31,13 +31,17 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    // RPC call to a function that gets movies and their directors
-    const rpcCall = supabase.rpc('get_movies_with_director', { category_id: categoryId });
-
-    const response = await rpcCall;
-    const movies = await handleSupabaseError(response) as Movie[];
+    const { data, error } = await supabase.rpc('get_movies_with_director_by_category', { p_category_id: categoryId });
     
-    return movies.map(movie => ({ ...movie, director: movie.director || undefined }));
+    if (error) {
+        console.error('Error fetching movies by category:', error);
+        throw new Error(error.message);
+    }
+
+    return (data || []).map((movie: any) => ({
+        ...movie,
+        director: movie.director_name || undefined,
+    }));
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
