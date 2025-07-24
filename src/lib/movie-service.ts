@@ -151,51 +151,30 @@ export const discoverMovies = async ({
     personId?: string,
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
-    
-    let query = supabase.from('movies').select(`
-        *,
-        movie_genres!inner(genre_id),
-        movie_cast!inner(person_id)
-    `);
 
-    if (genreId && genreId !== 'all') {
-        query = query.eq('movie_genres.genre_id', parseInt(genreId));
-    }
-    if (personId && personId !== 'all') {
-        query = query.eq('movie_cast.person_id', parseInt(personId));
-    }
-    if (language && language !== 'all') {
-        query = query.eq('language', language);
-    }
-    if (recency && recency !== 'all') {
-        const now = new Date();
-        let fromDate: Date;
-        switch(recency) {
-            case '6m':
-                fromDate = sub(now, { months: 6 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '1y':
-                fromDate = sub(now, { years: 1 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '5y':
-                fromDate = sub(now, { years: 5 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '5y+':
-                fromDate = sub(now, { years: 5 });
-                query = query.lt('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
+    const params = {
+        p_genre_id: genreId && genreId !== 'all' ? parseInt(genreId, 10) : null,
+        p_person_id: personId && personId !== 'all' ? parseInt(personId, 10) : null,
+        p_language: language && language !== 'all' ? language : null,
+        p_recency: recency && recency !== 'all' ? recency : null,
+        p_limit: 40,
+    };
+
+    try {
+        const { data, error } = await supabase.rpc('discover_movies', params);
+
+        if (error) {
+            console.error('Error calling discover_movies RPC:', error);
+            throw new Error(`Failed to fetch discovered movies. Details: ${error.message}`);
         }
+        return data || [];
+    } catch (e) {
+        if (e instanceof Error) {
+            throw new Error(`Failed to fetch discovered movies. Details: ${e.message}`);
+        }
+        throw new Error('An unknown error occurred while fetching discovered movies.');
     }
-    
-    query = query.limit(40).order('vote_count', { ascending: false, nullsFirst: false });
-
-    const response = await query;
-
-    return handleSupabaseError(response);
-}
+};
 
 export const getGenres = async (): Promise<Genre[]> => {
     const supabase = getSupabaseClient();
