@@ -86,7 +86,6 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   const trailer = details?.videos?.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
   const genres = details?.genres?.map(g => g.name).join(', ');
   
-  const director = details?.director;
   const cast = details?.cast;
 
   return (
@@ -143,15 +142,6 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                     </div>
 
                     <div className="space-y-3 text-white/90">
-                      {director && (
-                        <div className="flex items-start gap-3">
-                           <Film className="w-5 h-5 mt-1 shrink-0" />
-                           <div>
-                              <h4 className="font-semibold text-white">Director</h4>
-                              <p className="text-muted-foreground">{director}</p>
-                           </div>
-                        </div>
-                      )}
                       {cast && cast.length > 0 && (
                          <div className="flex items-start gap-3">
                            <Users className="w-5 h-5 mt-1 shrink-0" />

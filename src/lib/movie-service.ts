@@ -68,20 +68,6 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
     const genresData = await handleSupabaseError(genresResponse);
     const genres = (genresData || []).map((g: any) => g.genres).filter(Boolean);
 
-    // Get Director
-    const { data: directorData, error: directorError } = await supabase
-        .from('movie_crew')
-        .select(`crew:cast_members ( name )`)
-        .eq('movie_id', movieId)
-        .eq('job', 'Director')
-        .limit(1)
-        .single();
-    
-    if (directorError && directorError.code !== 'PGRST116') { // Ignore 'single row not found'
-        console.error('Error fetching director:', directorError);
-    }
-    const director = directorData?.crew?.name || null;
-
     // Get Top 3 Cast
     const { data: castData, error: castError } = await supabase
         .from('movie_cast')
@@ -104,7 +90,6 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
     return {
         ...movieData,
         genres,
-        director,
         cast,
         videos: { results: [] }, // Mocked as not in schema
         credits: { cast: [], crew: [] }, // Mocked as not in schema
