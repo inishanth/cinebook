@@ -38,16 +38,6 @@ export const getTrendingMovies = async (): Promise<Movie[]> => {
     return handleSupabaseError(response);
 };
 
-// Function to shuffle an array
-const shuffleArray = (array: any[]) => {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-
 export const getMovieCredits = async (movieId: number): Promise<{ director: string | null; cast: string[] }> => {
     const supabase = getSupabaseClient();
 
@@ -55,7 +45,6 @@ export const getMovieCredits = async (movieId: number): Promise<{ director: stri
     const { data: directorData, error: directorError } = await supabase
         .from('movie_crew')
         .select(`
-            job,
             crew ( name )
         `)
         .eq('movie_id', movieId)
@@ -83,7 +72,10 @@ export const getMovieCredits = async (movieId: number): Promise<{ director: stri
         console.error('Error fetching cast:', castError);
     }
     
-    const cast = castData?.map(c => c.cast_members.name).filter(Boolean) || [];
+    const cast = (castData || [])
+        .map(c => c.cast_members?.name)
+        .filter((name, index, self) => name && self.indexOf(name) === index) as string[];
+
     
     return { director, cast };
 }
@@ -98,7 +90,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query.order('vote_count', { ascending: false, nullsFirst: false });
             break;
         case 'top_rated':
-            query = query.gte('vote_count', 10).order('vote_average', { ascending: false, nullsFirst: false });
+            query = query.gte('vote_count', 100).order('vote_average', { ascending: false, nullsFirst: false });
             break;
         case 'upcoming':
             query = query.filter('release_date', 'gt', new Date().toISOString()).order('release_date', { ascending: true });
@@ -107,7 +99,8 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             const oneMonthAgo = sub(new Date(), { months: 1 });
             query = query
                 .filter('release_date', 'lte', new Date().toISOString())
-                .filter('release_date', 'gte', oneMonthAgo.toISOString());
+                .filter('release_date', 'gte', oneMonthAgo.toISOString())
+                .order('release_date', { ascending: false });
             break;
         default:
              query = query.order('release_date', { ascending: false });
@@ -115,10 +108,6 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
 
     const response = await query.limit(25);
     let movies = await handleSupabaseError(response);
-    
-    if (categoryId === 'popular') {
-        movies = shuffleArray(movies);
-    }
     
     if (categoryId === 'recently_released') {
         movies = movies.sort((a, b) => {
@@ -133,8 +122,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             const credits = await getMovieCredits(movie.id);
             return {
                 ...movie,
-                director: credits.director,
-                cast: credits.cast,
+                ...credits,
             };
         })
     );
@@ -182,6 +170,64 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
     } as MovieDetails;
 };
 
+const batchFetchCredits = async (movieIds: number[]): Promise<Record<number, { director: string | null; cast: string[] }>> => {
+    if (movieIds.length === 0) return {};
+    const supabase = getSupabaseClient();
+
+    // Batch fetch directors
+    const { data: directorData, error: directorError } = await supabase
+        .from('movie_crew')
+        .select('movie_id, crew ( name )')
+        .in('movie_id', movieIds)
+        .eq('job', 'Director');
+    
+    if (directorError) {
+        console.error('Error batch fetching directors:', directorError);
+    }
+    const directorsMap: Record<number, string> = {};
+    if (directorData) {
+        for (const item of directorData) {
+            if (item.crew) {
+                directorsMap[item.movie_id] = item.crew.name;
+            }
+        }
+    }
+    
+    // Batch fetch cast
+    const { data: castData, error: castError } = await supabase
+        .from('movie_cast')
+        .select('movie_id, cast_order, cast_members ( name )')
+        .in('movie_id', movieIds)
+        .in('cast_order', [0, 1, 2])
+        .order('cast_order', { ascending: true });
+
+    if (castError) {
+        console.error('Error batch fetching cast:', castError);
+    }
+    
+    const castMap: Record<number, string[]> = {};
+    if (castData) {
+        for (const item of castData) {
+            if (!castMap[item.movie_id]) {
+                castMap[item.movie_id] = [];
+            }
+            if (item.cast_members?.name && !castMap[item.movie_id].includes(item.cast_members.name)) {
+                castMap[item.movie_id].push(item.cast_members.name);
+            }
+        }
+    }
+
+    const credits: Record<number, { director: string | null; cast: string[] }> = {};
+    for (const movieId of movieIds) {
+        credits[movieId] = {
+            director: directorsMap[movieId] || null,
+            cast: castMap[movieId] || [],
+        };
+    }
+    
+    return credits;
+}
+
 export const searchMovies = async (query: string): Promise<Movie[]> => {
     if (!query) return [];
     const supabase = getSupabaseClient();
@@ -190,19 +236,15 @@ export const searchMovies = async (query: string): Promise<Movie[]> => {
         .select('*')
         .ilike('title', `%${query}%`)
         .limit(20);
+        
     const movies = await handleSupabaseError(response);
+    const movieIds = movies.map(m => m.id);
+    const credits = await batchFetchCredits(movieIds);
 
-    const moviesWithCredits = await Promise.all(
-        movies.map(async (movie) => {
-            const credits = await getMovieCredits(movie.id);
-            return {
-                ...movie,
-                director: credits.director,
-                cast: credits.cast,
-            };
-        })
-    );
-    return moviesWithCredits;
+    return movies.map(movie => ({
+        ...movie,
+        ...credits[movie.id],
+    }));
 }
 
 export const discoverMovies = async ({
@@ -262,18 +304,21 @@ export const discoverMovies = async ({
     
     const data = await handleSupabaseError(response);
     
-    const uniqueMovies: Movie[] = [];
-    const movieIds = new Set();
-    
-    for (const rawMovie of data) {
-      if (rawMovie && !movieIds.has(rawMovie.id)) {
-          const credits = await getMovieCredits(rawMovie.id);
-          const movie = { ...rawMovie, ...credits };
-          uniqueMovies.push(movie);
-          movieIds.add(movie.id);
-      }
+    const movieMap = new Map<number, Movie>();
+    for (const movie of data) {
+        if (movie && !movieMap.has(movie.id)) {
+            movieMap.set(movie.id, movie as Movie);
+        }
     }
-    return uniqueMovies;
+
+    const uniqueMovies = Array.from(movieMap.values());
+    const movieIds = uniqueMovies.map(m => m.id);
+    const credits = await batchFetchCredits(movieIds);
+
+    return uniqueMovies.map(movie => ({
+        ...movie,
+        ...credits[movie.id],
+    }));
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
@@ -310,7 +355,7 @@ export const getLeadActors = async (): Promise<Person[]> => {
         throw new Error(error.message);
     }
 
-    const personIds = [...new Set(leadCast.map(c => c.person_id))];
+    const personIds = [...new Set(leadCast.map(c => c.person_id))].filter(Boolean);
 
     const { data: people, error: peopleError } = await supabase
         .from('cast_members')
