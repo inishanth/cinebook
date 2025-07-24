@@ -28,48 +28,6 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
   return response.data;
 }
 
-export const getMovieCredits = async (movieId: number): Promise<{ director: string | null; cast: string[] }> => {
-    const supabase = getSupabaseClient();
-
-    // Get Director
-    const { data: directorData, error: directorError } = await supabase
-        .from('movie_crew')
-        .select(`
-            crew:cast_members ( name )
-        `)
-        .eq('movie_id', movieId)
-        .eq('job', 'Director')
-        .limit(1)
-        .single();
-    
-    if (directorError && directorError.code !== 'PGRST116') { // Ignore 'single row not found'
-        console.error('Error fetching director:', directorError);
-    }
-    const director = directorData?.crew?.name || null;
-
-    // Get Top 3 Cast
-    const { data: castData, error: castError } = await supabase
-        .from('movie_cast')
-        .select(`
-            cast_order,
-            cast_members ( name )
-        `)
-        .eq('movie_id', movieId)
-        .in('cast_order', [0, 1, 2])
-        .order('cast_order', { ascending: true });
-
-    if (castError) {
-        console.error('Error fetching cast:', castError);
-    }
-    
-    const cast = (castData || [])
-        .map(c => c.cast_members?.name)
-        .filter((name, index, self) => name && self.indexOf(name) === index) as string[];
-
-    
-    return { director, cast };
-}
-
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     let query = supabase.from('movies')
@@ -104,31 +62,65 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
     const supabase = getSupabaseClient();
-    const response = await supabase
+
+    const movieResponse = await supabase
       .from('movies')
-      .select(`
-        *,
-        genres:movie_genres(
-            genres(id, name)
-        )
-      `)
+      .select(`*`)
       .eq('id', movieId)
       .single();
 
-    const movieData = await handleSupabaseError(response);
+    const movieData = await handleSupabaseError(movieResponse);
     
     if (!movieData) {
         throw new Error('Movie not found');
     }
     
-    const genres = (movieData.genres || []).map((g: any) => g.genres).filter(Boolean);
+    const genresResponse = await supabase
+        .from('movie_genres')
+        .select(`genres(id, name)`)
+        .eq('movie_id', movieId);
+        
+    const genresData = await handleSupabaseError(genresResponse);
+    const genres = (genresData || []).map((g: any) => g.genres).filter(Boolean);
 
-    const credits = await getMovieCredits(movieId);
+    // Get Director
+    const { data: directorData, error: directorError } = await supabase
+        .from('movie_crew')
+        .select(`crew:cast_members ( name )`)
+        .eq('movie_id', movieId)
+        .eq('job', 'Director')
+        .limit(1)
+        .single();
+    
+    if (directorError && directorError.code !== 'PGRST116') { // Ignore 'single row not found'
+        console.error('Error fetching director:', directorError);
+    }
+    const director = directorData?.crew?.name || null;
+
+    // Get Top 3 Cast
+    const { data: castData, error: castError } = await supabase
+        .from('movie_cast')
+        .select(`
+            cast_order,
+            cast_members ( name )
+        `)
+        .eq('movie_id', movieId)
+        .in('cast_order', [0, 1, 2])
+        .order('cast_order', { ascending: true });
+
+    if (castError) {
+        console.error('Error fetching cast:', castError);
+    }
+    
+    const cast = (castData || [])
+        .map(c => c.cast_members?.name)
+        .filter((name, index, self) => name && self.indexOf(name) === index) as string[];
 
     return {
         ...movieData,
-        ...credits,
         genres,
+        director,
+        cast,
         videos: { results: [] }, // Mocked as not in schema
         credits: { cast: [], crew: [] }, // Mocked as not in schema
         release_dates: { results: [] }, // Mocked as not in schema
