@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import type { Movie, Genre, Person } from '@/types';
-import { discoverMovies, getGenres, getLanguages, getLeadActors } from '@/lib/movie-service';
+import { discoverMovies } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,12 +66,19 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
     )
 }
 
-export function MovieHomeClient({ initialMoviesByCat }: { initialMoviesByCat: Record<string, Movie[]>}) {
+export function MovieHomeClient({ 
+    initialMoviesByCat,
+    initialGenres,
+    initialLanguages,
+    initialActors,
+}: { 
+    initialMoviesByCat: Record<string, Movie[]>,
+    initialGenres: Genre[],
+    initialLanguages: string[],
+    initialActors: Person[],
+}) {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
-    const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>(initialMoviesByCat);
-    const [genres, setGenres] = React.useState<Genre[]>([]);
-    const [languages, setLanguages] = React.useState<string[]>([]);
-    const [actors, setActors] = React.useState<Person[]>([]);
+    const [moviesByCat] = React.useState<Record<string, Movie[]>>(initialMoviesByCat);
     
     const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
@@ -86,26 +93,6 @@ export function MovieHomeClient({ initialMoviesByCat }: { initialMoviesByCat: Re
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
     
-    React.useEffect(() => {
-        const fetchFilterData = async () => {
-            try {
-                 const [genresData, languagesData, actorsData] = await Promise.all([
-                    getGenres(),
-                    getLanguages(),
-                    getLeadActors(),
-                ]);
-                setGenres(genresData);
-                setLanguages(languagesData);
-                setActors(actorsData);
-            } catch (e) {
-                 const errorMessage = e instanceof Error ? e.message : String(e);
-                setError(errorMessage);
-                console.error("Error fetching filter data", e);
-            }
-        };
-        fetchFilterData();
-    }, []);
-
     React.useEffect(() => {
         const applyFilters = async () => {
             if (!hasActiveFilters) {
@@ -208,7 +195,7 @@ export function MovieHomeClient({ initialMoviesByCat }: { initialMoviesByCat: Re
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Genres</SelectItem>
-                            {genres.map(genre => (
+                            {initialGenres.map(genre => (
                                 <SelectItem key={genre.id} value={String(genre.id)}>
                                     {genre.name}
                                 </SelectItem>
@@ -221,7 +208,7 @@ export function MovieHomeClient({ initialMoviesByCat }: { initialMoviesByCat: Re
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Actors</SelectItem>
-                            {actors.map(actor => (
+                            {initialActors.map(actor => (
                                 <SelectItem key={actor.id} value={String(actor.id)}>
                                     {actor.name}
                                 </SelectItem>
@@ -234,7 +221,7 @@ export function MovieHomeClient({ initialMoviesByCat }: { initialMoviesByCat: Re
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Languages</SelectItem>
-                            {languages.map(lang => (
+                            {initialLanguages.map(lang => (
                                 <SelectItem key={lang} value={lang}>
                                     {lang.toUpperCase()}
                                 </SelectItem>
