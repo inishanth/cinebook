@@ -117,17 +117,13 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
         });
     }
 
-    const moviesWithCredits = await Promise.all(
-        movies.map(async (movie) => {
-            const credits = await getMovieCredits(movie.id);
-            return {
-                ...movie,
-                ...credits,
-            };
-        })
-    );
+    const movieIds = movies.map(m => m.id);
+    const credits = await batchFetchCredits(movieIds);
 
-    return moviesWithCredits;
+    return movies.map(movie => ({
+        ...movie,
+        ...credits[movie.id],
+    }));
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
@@ -369,3 +365,4 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
+
