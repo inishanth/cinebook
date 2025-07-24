@@ -31,17 +31,36 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    const { data, error } = await supabase.rpc('get_movies_with_director_by_category', { p_category_id: categoryId });
+    // This RPC does not exist in the user's schema, causing a crash.
+    // const { data, error } = await supabase.rpc('get_movies_with_director_by_category', { p_category_id: categoryId });
     
+    // Switched to a standard query that fetches movies by category and joins to get the director.
+    // This assumes a 'movie_categories_mapping' table exists to map string categories to movie IDs.
+    const { data, error } = await supabase
+      .from('movie_categories_mapping')
+      .select(`
+        movies (*),
+        director:movie_crew (
+          crew:cast_members (name)
+        )
+      `)
+      .eq('category_id', categoryId)
+      .eq('director.job', 'Director')
+      .limit(20);
+
     if (error) {
         console.error('Error fetching movies by category:', error);
         throw new Error(error.message);
     }
-
-    return (data || []).map((movie: any) => ({
-        ...movie,
-        director: movie.director_name || undefined,
-    }));
+    
+    // Process the data to match the expected Movie[] structure
+    return (data || []).map((item: any) => {
+        const directorInfo = Array.isArray(item.director) ? item.director[0] : null;
+        return {
+            ...item.movies,
+            director: directorInfo?.crew?.name || undefined,
+        }
+    }).filter(movie => movie.id); // Filter out any potential null movies
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
