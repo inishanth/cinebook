@@ -35,7 +35,7 @@ function CategoryRowSkeleton() {
             <Skeleton className="h-7 w-48" />
             <div className="flex space-x-4">
                 {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="w-32 h-48 md:w-40 md:h-60" />
+                    <Skeleton key={i} className="w-40 h-60" />
                 ))}
             </div>
         </div>
@@ -81,22 +81,39 @@ export default function Home() {
     const [filteredMovies, setFilteredMovies] = React.useState<Movie[]>([]);
     const [isFilteredView, setIsFilteredView] = React.useState(false);
     
-    const [loading, setLoading] = React.useState(true);
+    const [loadingMovies, setLoadingMovies] = React.useState(true);
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
     
     React.useEffect(() => {
-        const fetchInitialData = async () => {
+        const fetchFilterData = async () => {
             try {
-                setLoading(true);
-                const [categoryMoviesData, genresData, languagesData, actorsData] = await Promise.all([
-                    Promise.all(movieCategories.map(category => getMoviesByCategory(category.id))),
+                 const [genresData, languagesData, actorsData] = await Promise.all([
                     getGenres(),
                     getLanguages(),
                     getLeadActors(),
                 ]);
+                setGenres(genresData);
+                setLanguages(languagesData);
+                setActors(actorsData);
+            } catch (e) {
+                 const errorMessage = e instanceof Error ? e.message : String(e);
+                setError(errorMessage);
+                console.error("Error fetching filter data", e);
+            }
+        };
+        fetchFilterData();
+    }, []);
+
+    React.useEffect(() => {
+        const fetchMovieCategories = async () => {
+            try {
+                setLoadingMovies(true);
+                const categoryMoviesData = await Promise.all(
+                    movieCategories.map(category => getMoviesByCategory(category.id))
+                );
 
                 const moviesData: Record<string, Movie[]> = {};
                 categoryMoviesData.forEach((movies, index) => {
@@ -104,19 +121,16 @@ export default function Home() {
                 });
 
                 setMoviesByCat(moviesData);
-                setGenres(genresData);
-                setLanguages(languagesData);
-                setActors(actorsData);
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
                 setError(errorMessage);
                 console.error(e);
             } finally {
-                setLoading(false);
+                setLoadingMovies(false);
             }
         };
-        fetchInitialData();
+        fetchMovieCategories();
     }, []);
 
     React.useEffect(() => {
@@ -291,7 +305,7 @@ export default function Home() {
                     animate="visible"
                     className="flex flex-col space-y-12"
                 >
-                    {loading ? (
+                    {loadingMovies ? (
                         <>
                             {movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)}
                         </>
@@ -321,3 +335,5 @@ export default function Home() {
         </>
     );
 }
+
+    
