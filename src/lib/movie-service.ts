@@ -28,16 +28,6 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
   return response.data;
 }
 
-export const getTrendingMovies = async (): Promise<Movie[]> => {
-    const supabase = getSupabaseClient();
-    const response = await supabase
-        .from('movies')
-        .select('*')
-        .order('release_date', { ascending: false })
-        .limit(25);
-    return handleSupabaseError(response);
-};
-
 export const getMovieCredits = async (movieId: number): Promise<{ director: string | null; cast: string[] }> => {
     const supabase = getSupabaseClient();
 
@@ -264,7 +254,6 @@ export const getLeadActors = async (): Promise<Person[]> => {
     const { data: people, error: peopleError } = await supabase
         .from('cast_members')
         .select('id, name')
-        .order('popularity', { ascending: false })
         .limit(100);
 
     if (peopleError) {
