@@ -205,7 +205,7 @@ export const getLanguages = async (): Promise<string[]> => {
     const response = await supabase.rpc('get_distinct_languages');
     
     const data = await handleSupabaseError(response);
-    return data.sort();
+    return (data || []).sort();
 };
 
 
