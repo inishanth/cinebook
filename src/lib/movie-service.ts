@@ -204,14 +204,20 @@ export const getGenres = async (): Promise<Genre[]> => {
 
 export const getLanguages = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.rpc('get_unique_languages');
+    const { data, error } = await supabase
+        .from('movies')
+        .select('language');
 
      if (error) {
         console.error('Supabase Error getting languages:', error);
         throw new Error(error.message);
     }
     
-    return data.sort();
+    if (!data) return [];
+    
+    const languages = data.map(item => item.language).filter(Boolean);
+    const uniqueLanguages = [...new Set(languages)];
+    return uniqueLanguages.sort();
 };
 
 
