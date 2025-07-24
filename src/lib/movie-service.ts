@@ -152,15 +152,56 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
 
-    const params: any = {
-      genre_id: genreId && genreId !== 'all' ? parseInt(genreId, 10) : null,
-      person_id: personId && personId !== 'all' ? parseInt(personId, 10) : null,
-      language: language && language !== 'all' ? language : null,
-      recency: recency && recency !== 'all' ? recency : null,
-    };
-    
-    const response = await supabase.rpc('get_filtered_movies', params);
+    let query = supabase.from('movies').select(`
+        *,
+        movie_genres!inner(genres!inner(id, name)),
+        movie_cast!inner(cast_members!inner(id, name))
+    `);
 
+    if (genreId && genreId !== 'all') {
+        query = query.eq('movie_genres.genre_id', parseInt(genreId));
+    }
+
+    if (personId && personId !== 'all') {
+        query = query.eq('movie_cast.person_id', parseInt(personId));
+    }
+
+    if (language && language !== 'all') {
+        query = query.eq('language', language);
+    }
+
+    if (recency && recency !== 'all') {
+        const now = new Date();
+        let fromDate: Date | null = null;
+        let toDate: Date | null = new Date();
+
+        switch (recency) {
+            case '6m':
+                fromDate = sub(now, { months: 6 });
+                break;
+            case '1y':
+                fromDate = sub(now, { years: 1 });
+                break;
+            case '5y':
+                fromDate = sub(now, { years: 5 });
+                break;
+            case '5y+':
+                toDate = sub(now, { years: 5 });
+                fromDate = null; // No lower bound
+                break;
+        }
+
+        if (fromDate) {
+             query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
+        }
+        if (toDate) {
+            query = query.lte('release_date', format(toDate, 'yyyy-MM-dd'));
+        }
+    }
+    
+    query = query.order('release_date', { ascending: false }).limit(50);
+    
+    const response = await query;
     return handleSupabaseError(response);
 };
 
@@ -205,4 +246,3 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
-
