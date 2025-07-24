@@ -31,18 +31,36 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    const { data, error } = await supabase
-      .from('movie_categories_mapping')
-      .select('movies(*)')
-      .eq('category_id', categoryId)
-      .limit(20);
+    // Step 1: Get movie IDs for the category
+    const { data: mappingData, error: mappingError } = await supabase
+        .from('movie_categories_mapping')
+        .select('movie_id')
+        .eq('category_id', categoryId)
+        .limit(20);
 
-    if (error) {
-        console.error('Error fetching movies by category:', error);
-        throw new Error(error.message);
+    if (mappingError) {
+        console.error('Error fetching movie category mappings:', mappingError);
+        throw new Error(mappingError.message);
+    }
+
+    if (!mappingData || mappingData.length === 0) {
+        return [];
+    }
+
+    const movieIds = mappingData.map(item => item.movie_id);
+
+    // Step 2: Get movies with those IDs
+    const { data: moviesData, error: moviesError } = await supabase
+        .from('movies')
+        .select('*')
+        .in('id', movieIds);
+
+    if (moviesError) {
+        console.error('Error fetching movies by IDs:', moviesError);
+        throw new Error(moviesError.message);
     }
     
-    return (data || []).map((item: any) => item.movies).filter(Boolean);
+    return moviesData || [];
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
