@@ -251,34 +251,20 @@ export const getGenres = async (): Promise<Genre[]> => {
 export const getLanguages = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
     const response = await supabase
-        .from('movies')
-        .select('language');
+        .rpc('get_distinct_languages');
     
     const data = await handleSupabaseError(response);
-    const languages = data.map((m: { language: string }) => m.language);
-    return [...new Set(languages)].filter(Boolean).sort();
+    return data.map((l: { language: string }) => l.language).sort();
 };
 
 
 export const getLeadActors = async (): Promise<Person[]> => {
     const supabase = getSupabaseClient();
-    const { data: leadCast, error } = await supabase
-        .from('movie_cast')
-        .select('person_id')
-        .eq('cast_order', 0)
-        .limit(100);
-
-    if (error) {
-        console.error('Supabase Error getting lead cast:', error);
-        throw new Error(error.message);
-    }
-
-    const personIds = [...new Set(leadCast.map(c => c.person_id))].filter(Boolean);
-
     const { data: people, error: peopleError } = await supabase
         .from('cast_members')
         .select('id, name')
-        .in('id', personIds);
+        .order('popularity', { ascending: false })
+        .limit(100);
 
     if (peopleError) {
         console.error('Supabase Error getting cast members:', peopleError);
