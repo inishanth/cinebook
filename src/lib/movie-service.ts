@@ -97,16 +97,8 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
     }
 
     const response = await query.limit(15);
-    let movies = await handleSupabaseError(response);
+    const movies = await handleSupabaseError(response);
     
-    if (categoryId === 'recently_released') {
-        movies = movies.sort((a, b) => {
-            const scoreA = a.vote_average * a.vote_count;
-            const scoreB = b.vote_average * b.vote_count;
-            return scoreB - scoreA;
-        });
-    }
-
     return movies;
 }
 
@@ -116,7 +108,7 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
       .from('movies')
       .select(`
         *,
-        genres:movie_genres!inner(
+        genres:movie_genres(
             genres(id, name)
         )
       `)
@@ -129,14 +121,7 @@ export const getMovieDetails = async (movieId: number): Promise<MovieDetails> =>
         throw new Error('Movie not found');
     }
     
-    const genreMap = new Map();
-    (movieData.genres || []).forEach((g: any) => {
-        if(g.genres) {
-            genreMap.set(g.genres.id, g.genres);
-        }
-    });
-
-    const genres = Array.from(genreMap.values());
+    const genres = (movieData.genres || []).map((g: any) => g.genres).filter(Boolean);
 
     const credits = await getMovieCredits(movieId);
 
@@ -175,58 +160,35 @@ export const discoverMovies = async ({
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    let query = supabase.from('movies').select('*, movie_genres!inner(genre_id), movie_cast!inner(person_id)');
-    
+    const params: any = {
+        p_limit: 40,
+        p_genre_id: null,
+        p_person_id: null,
+        p_language: null,
+        p_recency: null,
+    };
+
     if (genreId && genreId !== 'all') {
-        query = query.eq('movie_genres.genre_id', genreId);
+        params.p_genre_id = parseInt(genreId);
     }
-
     if (personId && personId !== 'all') {
-        query = query.eq('movie_cast.person_id', personId);
+        params.p_person_id = parseInt(personId);
     }
-    
     if (language && language !== 'all') {
-        query = query.eq('language', language);
+        params.p_language = language;
     }
-
     if (recency && recency !== 'all') {
-        const today = new Date();
-        let fromDate: Date;
-        
-        switch (recency) {
-            case '6m':
-                fromDate = sub(today, { months: 6 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '1y':
-                fromDate = sub(today, { years: 1 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '5y':
-                fromDate = sub(today, { years: 5 });
-                query = query.gte('release_date', format(fromDate, 'yyyy-MM-dd'));
-                break;
-            case '5y+':
-                const fiveYearsAgo = sub(today, { years: 5 });
-                query = query.lte('release_date', format(fiveYearsAgo, 'yyyy-MM-dd'));
-                break;
-        }
-    }
-    
-    const response = await query
-        .order('release_date', { ascending: false })
-        .limit(40);
-    
-    const data = await handleSupabaseError(response);
-    
-    const movieMap = new Map<number, Movie>();
-    for (const movie of data) {
-        if (movie && !movieMap.has(movie.id)) {
-            movieMap.set(movie.id, movie as Movie);
-        }
+        params.p_recency = recency;
     }
 
-    return Array.from(movieMap.values());
+    const { data, error } = await supabase.rpc('discover_movies', params);
+    
+    if (error) {
+        console.error('Supabase RPC Error:', error);
+        throw new Error(`Failed to fetch discovered movies. Details: ${error.message}`);
+    }
+
+    return data as Movie[];
 }
 
 export const getGenres = async (): Promise<Genre[]> => {
@@ -240,12 +202,10 @@ export const getGenres = async (): Promise<Genre[]> => {
 
 export const getLanguages = async (): Promise<string[]> => {
     const supabase = getSupabaseClient();
-    const response = await supabase.from('movies').select('language');
+    const response = await supabase.rpc('get_distinct_languages');
     
     const data = await handleSupabaseError(response);
-    const languages = data.map((l: { language: string }) => l.language);
-    const uniqueLanguages = [...new Set(languages)];
-    return uniqueLanguages.filter(Boolean).sort();
+    return data.sort();
 };
 
 
@@ -263,4 +223,3 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
-
