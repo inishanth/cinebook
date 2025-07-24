@@ -111,13 +111,21 @@ export default function Home() {
         const fetchMovieCategories = async () => {
             setLoadingMovies(true);
             try {
-                for (const category of movieCategories) {
-                    const movies = await getMoviesByCategory(category.id);
-                    setMoviesByCat((prev) => ({
-                        ...prev,
-                        [category.title]: movies,
-                    }));
-                }
+                const categoryPromises = movieCategories.map(category =>
+                    getMoviesByCategory(category.id).then(movies => ({
+                        title: category.title,
+                        movies: movies
+                    }))
+                );
+
+                const results = await Promise.all(categoryPromises);
+
+                const moviesMap = results.reduce((acc, result) => {
+                    acc[result.title] = result.movies;
+                    return acc;
+                }, {} as Record<string, Movie[]>);
+                
+                setMoviesByCat(moviesMap);
                 setError(null);
             } catch (e) {
                 const errorMessage = e instanceof Error ? e.message : String(e);
@@ -302,7 +310,7 @@ export default function Home() {
                     animate="visible"
                     className="flex flex-col space-y-12"
                 >
-                    {loadingMovies && Object.keys(moviesByCat).length === 0 ? (
+                    {loadingMovies ? (
                         <>
                             {movieCategories.map((cat) => <CategoryRowSkeleton key={cat.id} />)}
                         </>
@@ -317,9 +325,7 @@ export default function Home() {
                                             onMovieClick={handleOpenModal}
                                         />
                                     </motion.div>
-                                ) : (
-                                   !loadingMovies && !moviesByCat[cat.title] ? null : <CategoryRowSkeleton key={cat.id} />
-                                )
+                                ) : null
                             ))}
                         </>
                     )}
@@ -334,3 +340,4 @@ export default function Home() {
         </>
     );
 }
+ 
