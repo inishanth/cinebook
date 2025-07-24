@@ -79,15 +79,15 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
     }
   }, [isOpen, initialMovie, toast, onClose]);
 
-  const movie = details || initialMovie;
-  if (!movie) return null;
+  const movieToDisplay = details || initialMovie;
+  if (!movieToDisplay) return null;
 
-  const isInWatchlist = isMovieInWatchlist(movie.id);
+  const isInWatchlist = isMovieInWatchlist(movieToDisplay.id);
   const trailer = details?.videos?.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
   const genres = details?.genres?.map(g => g.name).join(', ');
   
-  const director = details?.director || initialMovie?.director;
-  const cast = details?.cast || initialMovie?.cast;
+  const director = details?.director;
+  const cast = details?.cast;
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -96,12 +96,12 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
         className="h-[95vh] bg-background/80 backdrop-blur-sm border-t-2 border-primary p-0 flex flex-col rounded-t-2xl"
       >
          <SheetTitle className="sr-only">
-            {movie ? movie.title : 'Movie Details'}
+            {movieToDisplay ? movieToDisplay.title : 'Movie Details'}
          </SheetTitle>
         <div className="absolute top-0 left-0 w-full h-80">
           <Image
-            src={getPosterUrl(movie.poster_url)}
-            alt={`Poster for ${movie.title}`}
+            src={getPosterUrl(movieToDisplay.poster_url)}
+            alt={`Poster for ${movieToDisplay.title}`}
             fill
             className="object-cover object-top opacity-30"
           />
@@ -116,28 +116,28 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
             {loading ? <DetailSkeleton /> : (
                 <div className="p-6 text-white space-y-4 md:space-y-6">
                     <SheetHeader className="text-left space-y-2">
-                        <SheetTitle className="text-3xl md:text-4xl font-headline text-white">{movie.title}</SheetTitle>
+                        <SheetTitle className="text-3xl md:text-4xl font-headline text-white">{movieToDisplay.title}</SheetTitle>
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                            {details?.runtime && (
+                            {details?.runtime ? (
                                 <div className="flex items-center gap-1.5">
                                     <Clock className="w-4 h-4" />
                                     <span>{details.runtime} min</span>
                                 </div>
-                            )}
-                            {genres && (
+                            ) : initialMovie && <Skeleton className="h-4 w-16" />}
+                            {genres ? (
                                <div className="flex items-center gap-1.5">
                                     <Tags className="w-4 h-4" />
                                     <span>{genres}</span>
                                 </div>
-                            )}
+                            ) : initialMovie && <Skeleton className="h-4 w-24" />}
                         </div>
                     </SheetHeader>
                     
                     <div className="flex items-center gap-6 flex-wrap border-y border-white/10 py-4">
                         <div className="flex items-center gap-2" title="TMDb Rating">
                            <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
-                           <span className="text-lg font-bold">{movie.vote_average.toFixed(1)}</span>
+                           <span className="text-lg font-bold">{movieToDisplay.vote_average.toFixed(1)}</span>
                            <span className="text-sm text-muted-foreground">/ 10</span>
                         </div>
                     </div>
@@ -163,7 +163,7 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                       )}
                     </div>
                     
-                    <SheetDescription className="text-white/90 text-base max-w-prose pt-2">{movie.overview}</SheetDescription>
+                    <SheetDescription className="text-white/90 text-base max-w-prose pt-2">{movieToDisplay.overview}</SheetDescription>
                     
                     <div className="pt-4 flex flex-col sm:flex-row gap-4">
                         {trailer && (
@@ -173,7 +173,7 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
                                 </a>
                             </Button>
                         )}
-                        <Button onClick={() => addToWatchlist(movie)} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-primary hover:bg-primary/90">
+                        <Button onClick={() => addToWatchlist(movieToDisplay as Movie)} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-primary hover:bg-primary/90">
                            <Heart className="mr-2 h-4 w-4" />
                            {isInWatchlist ? 'In Watchlist' : 'Add to Watchlist'}
                         </Button>

@@ -8,8 +8,6 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   language: string;
-  director?: string | null;
-  cast?: string[];
 }
 
 export interface Genre {
@@ -25,6 +23,8 @@ export interface Person {
 export interface MovieDetails extends Movie {
   genres: Genre[];
   runtime: number;
+  director: string | null;
+  cast: string[];
   videos: {
     results: {
       key: string;

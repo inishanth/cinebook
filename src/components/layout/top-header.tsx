@@ -42,7 +42,7 @@ function SearchResults({ results, loading, onMovieClick }: { results: Movie[], l
                     onClick={() => onMovieClick(movie)}
                 >
                     <Image
-                        src={movie.poster_url || 'https://placehold.co/92x138.png'}
+                        src={movie.poster_url ? `https://image.tmdb.org/t/p/w92${movie.poster_url}` : 'https://placehold.co/92x138.png'}
                         alt={movie.title}
                         width={40}
                         height={60}
