@@ -23,6 +23,7 @@ export function MovieCard({ movie, onClick, loading = false }: MovieCardProps) {
               <Skeleton className="w-full h-60 rounded-lg" />
               <div className="mt-2 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
               </div>
           </div>
       )
@@ -53,6 +54,11 @@ export function MovieCard({ movie, onClick, loading = false }: MovieCardProps) {
       </div>
       <div className="mt-2 px-1">
         <h3 className="font-bold text-sm truncate text-primary group-hover:text-white" title={movie.title}>{movie.title}</h3>
+        {movie.director && (
+          <p className="text-xs text-muted-foreground truncate" title={movie.director}>
+            Dir. {movie.director}
+          </p>
+        )}
       </div>
     </motion.div>
   );

@@ -30,34 +30,14 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
-    let query = supabase.from('movies')
-        .select(`*`);
-        
-    switch(categoryId) {
-        case 'popular':
-            query = query.order('vote_count', { ascending: false, nullsFirst: false });
-            break;
-        case 'top_rated':
-            query = query.gte('vote_count', 100).order('vote_average', { ascending: false, nullsFirst: false });
-            break;
-        case 'upcoming':
-            query = query.filter('release_date', 'gt', new Date().toISOString()).order('release_date', { ascending: true });
-            break;
-        case 'recently_released':
-            const oneMonthAgo = sub(new Date(), { months: 1 });
-            query = query
-                .filter('release_date', 'lte', new Date().toISOString())
-                .filter('release_date', 'gte', oneMonthAgo.toISOString())
-                .order('release_date', { ascending: false });
-            break;
-        default:
-             query = query.order('release_date', { ascending: false });
-    }
-
-    const response = await query.limit(15);
-    const movies = await handleSupabaseError(response);
     
-    return movies;
+    // RPC call to a function that gets movies and their directors
+    const rpcCall = supabase.rpc('get_movies_with_director', { category_id: categoryId });
+
+    const response = await rpcCall;
+    const movies = await handleSupabaseError(response) as Movie[];
+    
+    return movies.map(movie => ({ ...movie, director: movie.director || undefined }));
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
@@ -154,14 +134,14 @@ export const discoverMovies = async ({
 
     let query = supabase.from('movies').select(`
         *,
-        movie_genres!inner(genres!inner(id, name)),
-        movie_cast!inner(cast_members!inner(id, name))
+        movie_genres!inner(genre_id),
+        movie_cast!inner(person_id)
     `);
 
     if (genreId && genreId !== 'all') {
         query = query.eq('movie_genres.genre_id', parseInt(genreId));
     }
-
+    
     if (personId && personId !== 'all') {
         query = query.eq('movie_cast.person_id', parseInt(personId));
     }
