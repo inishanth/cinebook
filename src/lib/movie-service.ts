@@ -31,55 +31,30 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    // The categoryId from the frontend is a string like 'popular'. 
-    // We need to find the numeric ID from the 'categories' table first.
-    const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('name', categoryId)
-        .single();
+    let query = supabase.from('movies').select('*');
 
-    if (categoryError) {
-        console.error('Error fetching category ID:', categoryError);
-        throw new Error(`Could not find category: ${categoryId}. Details: ${categoryError.message}`);
+    switch (categoryId) {
+        case 'popular':
+            query = query.order('vote_average', { ascending: false });
+            break;
+        case 'top_rated':
+            query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
+            break;
+        case 'upcoming':
+            query = query.order('release_date', { ascending: true }).gte('release_date', new Date().toISOString());
+            break;
+        case 'recently_released':
+            query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
+            break;
+        default:
+            // Default to popular if category is unknown
+            query = query.order('vote_average', { ascending: false });
+            break;
     }
 
-    if (!categoryData) {
-        return [];
-    }
-
-    const numericCategoryId = categoryData.id;
-
-    // Step 1: Get movie IDs for the category using the numeric ID
-    const { data: mappingData, error: mappingError } = await supabase
-        .from('movie_categories_mapping')
-        .select('movie_id')
-        .eq('category_id', numericCategoryId)
-        .limit(20);
-
-    if (mappingError) {
-        console.error('Error fetching movie category mappings:', mappingError);
-        throw new Error(mappingError.message);
-    }
-
-    if (!mappingData || mappingData.length === 0) {
-        return [];
-    }
-
-    const movieIds = mappingData.map(item => item.movie_id);
-
-    // Step 2: Get movies with those IDs
-    const { data: moviesData, error: moviesError } = await supabase
-        .from('movies')
-        .select('*')
-        .in('id', movieIds);
-
-    if (moviesError) {
-        console.error('Error fetching movies by IDs:', moviesError);
-        throw new Error(moviesError.message);
-    }
+    const response = await query.limit(20);
     
-    return moviesData || [];
+    return handleSupabaseError(response);
 }
 
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
