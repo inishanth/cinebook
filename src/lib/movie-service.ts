@@ -45,7 +45,7 @@ export const getMovieCredits = async (movieId: number): Promise<{ director: stri
     const { data: directorData, error: directorError } = await supabase
         .from('movie_crew')
         .select(`
-            crew ( name )
+            crew:cast_members ( name )
         `)
         .eq('movie_id', movieId)
         .eq('job', 'Director')
@@ -106,7 +106,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
              query = query.order('release_date', { ascending: false });
     }
 
-    const response = await query.limit(25);
+    const response = await query.limit(15);
     let movies = await handleSupabaseError(response);
     
     if (categoryId === 'recently_released') {
@@ -173,7 +173,7 @@ const batchFetchCredits = async (movieIds: number[]): Promise<Record<number, { d
     // Batch fetch directors
     const { data: directorData, error: directorError } = await supabase
         .from('movie_crew')
-        .select('movie_id, crew ( name )')
+        .select('movie_id, crew:cast_members ( name )')
         .in('movie_id', movieIds)
         .eq('job', 'Director');
     
