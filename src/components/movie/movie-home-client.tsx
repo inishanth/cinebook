@@ -239,16 +239,15 @@ export function MovieHomeClient({
     
     return (
         <>
-            <div className="mb-12 bg-secondary/30 border border-border rounded-xl p-4 md:p-6">
-                <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-xl font-headline font-bold text-primary">Discover Movies</h2>
-                     {hasActiveFilters && (
+            <div className="mb-12 bg-secondary/30 border border-border/50 rounded-2xl p-4 md:p-6">
+                 {hasActiveFilters && (
+                    <div className="flex justify-end mb-4 -mt-2 -mr-2">
                         <Button variant="ghost" onClick={handleClearFilters}>
                             <FilterX className="mr-2 h-4 w-4" />
                             Clear Filters
                         </Button>
-                     )}
-                </div>
+                    </div>
+                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <Select value={selectedGenre} onValueChange={setSelectedGenre}>
                         <SelectTrigger className="w-full" variant="secondary" icon={<Film />}>
@@ -352,5 +351,3 @@ export function MovieHomeClient({
         </>
     );
 }
-
-  
