@@ -17,9 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 
 
 const movieCategories = [
+    { id: 'recently_released', title: 'Recently Released' },
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
-    { id: 'recently_released', title: 'Recently Released' },
 ];
 
 const recencyOptions = [

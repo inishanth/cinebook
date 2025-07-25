@@ -7,33 +7,33 @@ import * as React from 'react';
 import { Suspense } from 'react';
 
 const movieCategories = [
+    { id: 'recently_released', title: 'Recently Released' },
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
-    { id: 'recently_released', title: 'Recently Released' },
 ];
 
 async function InitialDataLoader() {
   const moviesByCat: Record<string, Movie[]> = {};
 
   const [
+    recentlyReleased,
     popular,
     topRated,
-    recentlyReleased,
     genres,
     languages,
     actors
   ] = await Promise.all([
+      getMoviesByCategory('recently_released'),
       getMoviesByCategory('popular', 0),
       getMoviesByCategory('top_rated'),
-      getMoviesByCategory('recently_released'),
       getGenres(),
       getLanguages(),
       getLeadActors()
   ]);
 
+  moviesByCat['Recently Released'] = recentlyReleased;
   moviesByCat['Popular'] = popular;
   moviesByCat['Top Rated'] = topRated;
-  moviesByCat['Recently Released'] = recentlyReleased;
 
   return <MovieHomeClient 
     initialMoviesByCat={moviesByCat} 
