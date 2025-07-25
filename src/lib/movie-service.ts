@@ -36,13 +36,15 @@ export const getMoviesByCategory = async (categoryId: string, monthOffset = 0): 
     switch (categoryId) {
         case 'popular':
             const targetDate = sub(new Date(), { months: monthOffset });
-            const startDate = format(startOfMonth(targetDate), 'yyyy-MM-dd');
-            const endDate = format(endOfMonth(targetDate), 'yyyy-MM-dd');
-
+            if (monthOffset > 0) {
+              const startDate = format(startOfMonth(targetDate), 'yyyy-MM-dd');
+              const endDate = format(endOfMonth(targetDate), 'yyyy-MM-dd');
+               query = query
+                .gte('release_date', startDate)
+                .lte('release_date', endDate);
+            }
             query = query
                 .gte('vote_count', 10)
-                .gte('release_date', startDate)
-                .lte('release_date', endDate)
                 .order('release_date', { ascending: false })
                 .order('vote_average', { ascending: false, nullsFirst: false });
             break;
