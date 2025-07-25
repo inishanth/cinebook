@@ -47,7 +47,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
             break;
         default:
-            query = query.order('vote_average', { ascending: false });
+            query = query.order('popularity', { ascending: false });
             break;
     }
 
