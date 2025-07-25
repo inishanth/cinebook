@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -30,14 +31,15 @@ const SelectValue = SelectPrimitive.Value
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & VariantProps<typeof selectTriggerVariants>
->(({ className, children, variant, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & VariantProps<typeof selectTriggerVariants> & { icon?: React.ReactNode }
+>(({ className, children, variant, icon, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(selectTriggerVariants({ variant }), className)}
+    className={cn(selectTriggerVariants({ variant }), className, 'gap-2')}
     {...props}
   >
-    {children}
+    {icon}
+    <div className="flex-1 text-left">{children}</div>
     <SelectPrimitive.Icon asChild>
       <ChevronDown className="h-4 w-4 opacity-50" />
     </SelectPrimitive.Icon>
@@ -171,3 +173,5 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 }
+
+  

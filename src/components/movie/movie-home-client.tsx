@@ -10,7 +10,7 @@ import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -239,14 +239,19 @@ export function MovieHomeClient({
     
     return (
         <>
-            <div className="mb-8">
+            <div className="mb-12 bg-secondary/30 border border-border rounded-xl p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4">
                      <h2 className="text-xl font-headline font-bold text-primary">Discover Movies</h2>
-                     {hasActiveFilters && <Button variant="ghost" onClick={handleClearFilters}>Clear Filters</Button>}
+                     {hasActiveFilters && (
+                        <Button variant="ghost" onClick={handleClearFilters}>
+                            <FilterX className="mr-2 h-4 w-4" />
+                            Clear Filters
+                        </Button>
+                     )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger className="w-full" variant="secondary">
+                        <SelectTrigger className="w-full" variant="secondary" icon={<Film />}>
                             <SelectValue placeholder="Genre" />
                         </SelectTrigger>
                         <SelectContent>
@@ -259,7 +264,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                      <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full" variant="secondary">
+                        <SelectTrigger className="w-full" variant="secondary" icon={<Users />}>
                             <SelectValue placeholder="Actor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -272,7 +277,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                     <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-full" variant="secondary">
+                        <SelectTrigger className="w-full" variant="secondary" icon={<Languages />}>
                             <SelectValue placeholder="Language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -285,7 +290,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
-                        <SelectTrigger className="w-full" variant="secondary">
+                        <SelectTrigger className="w-full" variant="secondary" icon={<CalendarClock />}>
                             <SelectValue placeholder="Recency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -347,3 +352,5 @@ export function MovieHomeClient({
         </>
     );
 }
+
+  
