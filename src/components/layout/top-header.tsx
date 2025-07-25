@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -187,10 +187,13 @@ export function TopHeader() {
                 <div className="flex-1 flex justify-center px-4">
                     <InlineSearchBar />
                 </div>
-                <div className="flex items-center gap-2 ml-auto invisible">
-                    {/* Placeholder to balance the header */}
-                     <div className="h-8 w-8" />
-                    <h1 className="text-2xl font-headline hidden sm:block">CineBook</h1>
+                <div className="flex items-center gap-2 ml-auto">
+                    <Link href="/login">
+                         <Button variant="ghost" size="icon">
+                             <User className="h-6 w-6" />
+                             <span className="sr-only">Profile</span>
+                         </Button>
+                    </Link>
                 </div>
             </div>
         </header>

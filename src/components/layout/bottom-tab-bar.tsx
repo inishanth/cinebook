@@ -2,24 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home } from 'lucide-react';
+import { Home, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/login', label: 'Profile', icon: User },
 ];
 
 export function BottomTabBar() {
   const pathname = usePathname();
 
   if (navItems.length === 0) return null;
-  if (navItems.length === 1 && navItems[0].href === '/') {
-    // Don't show a tab bar for a single home button.
-    return null;
-  }
 
   return (
-    <nav className="fixed bottom-0 z-50 w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="fixed bottom-0 z-50 w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
       <div className="container flex h-16 max-w-screen-md items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
