@@ -2,37 +2,14 @@
 'use server';
 
 /**
- * @fileOverview Authentication flows for handling OTP generation and verification.
+ * @fileOverview Authentication flows for handling user creation.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
-
-// OTP generation logic
-const generateOtpFlow = ai.defineFlow(
-  {
-    name: 'generateOtpFlow',
-    inputSchema: z.object({ email: z.string().email() }),
-    outputSchema: z.object({
-      otp: z.string(),
-      expiresAt: z.string(),
-    }),
-  },
-  async ({ email }) => {
-    // Generate a 6-digit numeric OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // OTP expires in 10 minutes
-    
-    return { otp, expiresAt };
-  }
-);
-
-export async function generateOtp(input: { email: string }): Promise<{ otp: string; expiresAt: string; }> {
-    return generateOtpFlow(input);
-}
+import type { User } from '@/types';
 
 
-// OTP verification logic
 let supabase: ReturnType<typeof createClient>;
 function getSupabaseClient() {
   if (!supabase) {
@@ -44,39 +21,40 @@ function getSupabaseClient() {
   return supabase;
 }
 
-const verifyOtpFlow = ai.defineFlow(
+const CreateUserInputSchema = z.object({
+  email: z.string().email(),
+  username: z.string(),
+  password: z.string(),
+});
+
+const createUserFlow = ai.defineFlow(
     {
-        name: 'verifyOtpFlow',
-        inputSchema: z.object({
-            email: z.string().email(),
-            otp: z.string().length(6),
-        }),
-        outputSchema: z.boolean(),
+        name: 'createUserFlow',
+        inputSchema: CreateUserInputSchema,
+        outputSchema: z.void(),
     },
-    async ({ email, otp }) => {
+    async ({ email, username, password }) => {
         const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-            .from('otps')
-            .select('otp, expires_at')
-            .eq('email', email)
-            .single();
-
-        if (error || !data) {
-            console.error('OTP verification error:', error);
-            return false;
+        
+        const { data: existingUser } = await supabase.from('users').select('id').eq('email', email).single();
+        if (existingUser) {
+            throw new Error('An account with this email already exists.');
         }
 
-        const isOtpValid = data.otp === otp;
-        const isOtpExpired = new Date() > new Date(data.expires_at);
-
-        if (!isOtpValid || isOtpExpired) {
-            return false;
+        const { error } = await supabase
+            .from('users')
+            .insert({
+                email,
+                username,
+                password, // Storing plain text password - DO NOT DO THIS IN PRODUCTION
+            });
+        
+        if (error) {
+            throw new Error(error.message || 'Failed to create user account.');
         }
-
-        return true;
     }
 );
 
-export async function verifyOtp(input: { email: string; otp: string }): Promise<boolean> {
-    return verifyOtpFlow(input);
+export async function createUser(userData: Omit<User, 'id'>): Promise<void> {
+    await createUserFlow(userData);
 }

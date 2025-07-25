@@ -12,8 +12,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sendOtp, verifyOtpAndCreateUser } from '@/lib/auth-service';
+import { createUser } from '@/lib/auth-service';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const signupSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -21,55 +22,27 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
-const otpSchema = z.object({
-  otp: z.string().length(6, { message: 'OTP must be 6 digits.' }),
-});
-
 type SignupFormValues = z.infer<typeof signupSchema>;
-type OtpFormValues = z.infer<typeof otpSchema>;
 
 export default function SignupPage() {
-  const [step, setStep] = React.useState(1);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [signupData, setSignupData] = React.useState<SignupFormValues | null>(null);
+  const [isSuccess, setIsSuccess] = React.useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
-  const signupForm = useForm<SignupFormValues>({
+  const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: { email: '', username: '', password: '' },
   });
 
-  const otpForm = useForm<OtpFormValues>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: { otp: '' },
-  });
-
-  const handleSignupSubmit = async (values: SignupFormValues) => {
+  const handleSubmit = async (values: SignupFormValues) => {
     setIsLoading(true);
     try {
-      await sendOtp(values.email);
-      setSignupData(values);
-      setStep(2);
-      toast({ title: 'OTP Sent', description: 'An OTP has been sent to your email.' });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      toast({ variant: 'destructive', title: 'Error', description: errorMessage });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpSubmit = async (values: OtpFormValues) => {
-    if (!signupData) return;
-    setIsLoading(true);
-    try {
-      await verifyOtpAndCreateUser({ ...signupData, otp: values.otp });
+      await createUser(values);
       toast({ title: 'Account Created!', description: 'You can now sign in with your new account.' });
-      // Ideally, redirect to login or a success page
-      setStep(3); 
+      setIsSuccess(true);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      otpForm.setError('otp', { type: 'manual', message: errorMessage });
       toast({ variant: 'destructive', title: 'Error', description: errorMessage });
     } finally {
       setIsLoading(false);
@@ -92,9 +65,9 @@ export default function SignupPage() {
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-sm mx-auto overflow-hidden">
         <AnimatePresence mode="wait">
-          {step === 1 && (
+          {!isSuccess ? (
             <motion.div
-              key="step1"
+              key="form"
               initial="initial"
               animate="in"
               exit="out"
@@ -106,10 +79,10 @@ export default function SignupPage() {
                 <CardDescription>Enter your details to get started.</CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...signupForm}>
-                  <form onSubmit={signupForm.handleSubmit(handleSignupSubmit)} className="space-y-4">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                     <FormField
-                      control={signupForm.control}
+                      control={form.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
@@ -122,7 +95,7 @@ export default function SignupPage() {
                       )}
                     />
                     <FormField
-                      control={signupForm.control}
+                      control={form.control}
                       name="username"
                       render={({ field }) => (
                         <FormItem>
@@ -135,7 +108,7 @@ export default function SignupPage() {
                       )}
                     />
                     <FormField
-                      control={signupForm.control}
+                      control={form.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
@@ -149,7 +122,7 @@ export default function SignupPage() {
                     />
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Continue
+                      Create Account
                     </Button>
                   </form>
                 </Form>
@@ -163,53 +136,9 @@ export default function SignupPage() {
                 </p>
               </CardFooter>
             </motion.div>
-          )}
-
-          {step === 2 && (
+          ) : (
             <motion.div
-              key="step2"
-              initial="initial"
-              animate="in"
-              exit="out"
-              variants={pageVariants}
-              transition={pageTransition}
-            >
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Verify Your Email</CardTitle>
-                <CardDescription>Enter the 6-digit OTP sent to your email.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...otpForm}>
-                  <form onSubmit={otpForm.handleSubmit(handleOtpSubmit)} className="space-y-4">
-                    <FormField
-                      control={otpForm.control}
-                      name="otp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>OTP</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter OTP" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Create Account
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-               <CardFooter className="flex justify-center">
-                    <Button variant="link" onClick={() => setStep(1)}>Back to Sign Up</Button>
-              </CardFooter>
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <motion.div
-              key="step3"
+              key="success"
               initial="initial"
               animate="in"
               exit="out"
@@ -222,7 +151,7 @@ export default function SignupPage() {
                     <CardDescription>Your account has been created successfully.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button asChild className="w-full">
+                    <Button asChild className="w-full" onClick={() => router.push('/login')}>
                         <Link href="/login">Proceed to Sign In</Link>
                     </Button>
                 </CardContent>
