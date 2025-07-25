@@ -21,20 +21,6 @@ function getSupabaseClient() {
   return supabase;
 }
 
-// A simple (and not cryptographically secure) hashing function for demonstration.
-// In a real-world application, you MUST use a library like bcrypt or argon2.
-function simpleHash(password: string): string {
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-        const char = password.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash |= 0; // Convert to 32bit integer
-    }
-    // A simple way to make it look like a hash, not for security.
-    return 'hashed_' + hash.toString(16) + '_hashed';
-}
-
-
 const CreateUserInputSchema = z.object({
   email: z.string().email(),
   username: z.string(),
@@ -55,14 +41,12 @@ const createUserFlow = ai.defineFlow(
             throw new Error('An account with this email already exists.');
         }
 
-        const hashedPassword = simpleHash(password);
-
         const { error } = await supabase
             .from('users')
             .insert({
                 email,
                 username,
-                password_hash: hashedPassword,
+                password_hash: password, // Storing plain text password
             });
         
         if (error) {
@@ -95,13 +79,12 @@ const loginUserFlow = ai.defineFlow(
     },
     async ({ username, password }) => {
         const supabase = getSupabaseClient();
-        const hashedPassword = simpleHash(password);
 
         const { data, error } = await supabase
             .from('users')
             .select('id, username, email')
             .eq('username', username)
-            .eq('password_hash', hashedPassword)
+            .eq('password_hash', password) // Comparing plain text password
             .single();
 
         if (error || !data) {
