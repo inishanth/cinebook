@@ -80,18 +80,25 @@ const loginUserFlow = ai.defineFlow(
     async ({ username, password }) => {
         const supabase = getSupabaseClient();
 
-        const { data, error } = await supabase
+        // Step 1: Check if the user exists
+        const { data: user, error: userError } = await supabase
             .from('users')
-            .select('id, username, email')
+            .select('id, username, email, password_hash')
             .eq('username', username)
-            .eq('password_hash', password) // Comparing plain text password
             .single();
 
-        if (error || !data) {
-            throw new Error('Invalid username or password.');
+        if (userError || !user) {
+            throw new Error('Username does not exist.');
         }
 
-        return data;
+        // Step 2: If user exists, compare the password
+        if (user.password_hash !== password) {
+            throw new Error('Incorrect password.');
+        }
+
+        // Return user data, excluding the password hash
+        const { password_hash, ...userData } = user;
+        return userData;
     }
 );
 
