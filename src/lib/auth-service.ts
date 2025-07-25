@@ -31,22 +31,14 @@ export async function createUser(userData: Omit<User, 'id'>): Promise<void> {
 }
 
 
-// NOTE: You would need to create the 'users' and 'otps' tables in your Supabase project.
+// NOTE: You would need to create the 'users' table in your Supabase project.
 /*
 -- SQL for 'users' table
 CREATE TABLE users (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   username TEXT UNIQUE NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- SQL for 'otps' table
-CREATE TABLE otps (
-  email TEXT PRIMARY KEY,
-  otp TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
+  password TEXT NOT NULL, -- This will store the hashed password
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 */
