@@ -45,14 +45,6 @@ export const getMoviesByCategory = async (categoryId: string, page = 0): Promise
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
             break;
-        case 'on_the_air':
-            const today = new Date();
-            const oneMonthAgo = sub(today, { months: 1 });
-            query = query
-                .gte('release_date', format(oneMonthAgo, 'yyyy-MM-dd'))
-                .lte('release_date', format(today, 'yyyy-MM-dd'))
-                .order('vote_average', { ascending: false, nullsFirst: false });
-            break;
         case 'upcoming':
             query = query.order('release_date', { ascending: true }).gte('release_date', new Date().toISOString());
             break;
