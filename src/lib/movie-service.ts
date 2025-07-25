@@ -247,9 +247,9 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
         query = query.eq('language', language);
     }
     
-    // The region filter would typically be applied on a join with a releases table.
-    // Since our schema doesn't have that, we are filtering by language which is often region-specific.
-    // For a real-world scenario, you'd have a `movie_releases` table with `country_iso_3166_1`
+    if (region === 'IN') {
+        query = query.like('title', '%(India)%');
+    }
     
     return handleSupabaseError(await query);
 };
