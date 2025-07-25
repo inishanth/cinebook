@@ -15,6 +15,7 @@ import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -164,6 +165,8 @@ function InlineSearchBar() {
 export function TopHeader() {
     const { scrollY } = useScroll();
     const [scrolled, setScrolled] = useState(false);
+    const pathname = usePathname();
+    const isLoginPage = pathname === '/login';
 
     useEffect(() => {
         return scrollY.on('change', (latest) => {
@@ -178,23 +181,27 @@ export function TopHeader() {
             scrolled && "shadow-lg shadow-black/30"
             )}>
             <div className="container flex h-16 items-center">
-                <a href="/" className="flex items-center gap-2 mr-auto">
+                <a href="/" className={cn("flex items-center gap-2", isLoginPage ? 'mx-auto' : 'mr-auto')}>
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
                         CB
                     </div>
                     <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </a>
-                <div className="flex-1 flex justify-center px-4">
-                    <InlineSearchBar />
-                </div>
-                <div className="flex items-center gap-2 ml-auto">
-                    <Link href="/login">
-                         <Button variant="ghost" size="icon">
-                             <User className="h-6 w-6" />
-                             <span className="sr-only">Profile</span>
-                         </Button>
-                    </Link>
-                </div>
+                {!isLoginPage && (
+                    <>
+                        <div className="flex-1 flex justify-center px-4">
+                            <InlineSearchBar />
+                        </div>
+                        <div className="flex items-center gap-2 ml-auto">
+                            <Link href="/login">
+                                <Button variant="ghost" size="icon">
+                                    <User className="h-6 w-6" />
+                                    <span className="sr-only">Profile</span>
+                                </Button>
+                            </Link>
+                        </div>
+                    </>
+                )}
             </div>
         </header>
     );
