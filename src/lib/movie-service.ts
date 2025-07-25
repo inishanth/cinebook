@@ -28,21 +28,15 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
   return response.data;
 }
 
-export const getMoviesByCategory = async (categoryId: string, monthOffset = 0): Promise<Movie[]> => {
+export const getMoviesByCategory = async (categoryId: string, page = 0): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
+    const pageSize = 20;
+    const offset = page * pageSize;
     
     let query = supabase.from('movies').select('*');
 
     switch (categoryId) {
         case 'popular':
-            const targetDate = sub(new Date(), { months: monthOffset });
-            if (monthOffset > 0) {
-              const startDate = format(startOfMonth(targetDate), 'yyyy-MM-dd');
-              const endDate = format(endOfMonth(targetDate), 'yyyy-MM-dd');
-               query = query
-                .gte('release_date', startDate)
-                .lte('release_date', endDate);
-            }
             query = query
                 .gte('vote_count', 10)
                 .order('release_date', { ascending: false })
@@ -62,7 +56,7 @@ export const getMoviesByCategory = async (categoryId: string, monthOffset = 0): 
             break;
     }
 
-    const response = await query.limit(20);
+    const response = await query.range(offset, offset + pageSize - 1);
     
     return handleSupabaseError(response);
 }

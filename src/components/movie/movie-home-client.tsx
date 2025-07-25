@@ -95,7 +95,7 @@ export function MovieHomeClient({
     const [error, setError] = React.useState<string | null>(null);
     const { toast } = useToast();
 
-    const [popularMoviesMonthOffset, setPopularMoviesMonthOffset] = React.useState(0);
+    const [popularMoviesPage, setPopularMoviesPage] = React.useState(0);
     const [reloadingCategoryPage, setReloadingCategoryPage] = React.useState(false);
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
@@ -146,20 +146,20 @@ export function MovieHomeClient({
     const handleRefreshCategory = async (categoryId: string, categoryTitle: string) => {
         if (categoryId === 'popular') {
             setReloadingCategoryPage(true);
-            const nextOffset = popularMoviesMonthOffset + 1;
+            const nextPage = popularMoviesPage + 1;
             try {
-                const freshMovies = await getMoviesByCategory(categoryId, nextOffset);
+                const freshMovies = await getMoviesByCategory(categoryId, nextPage);
                 if (freshMovies.length > 0) {
                     setMoviesByCat(prev => ({ ...prev, [categoryTitle]: freshMovies }));
-                    setPopularMoviesMonthOffset(nextOffset);
+                    setPopularMoviesPage(nextPage);
                     toast({
                         title: "Refreshed!",
-                        description: `Showing popular movies from a month ago.`,
+                        description: `Showing the next page of popular movies.`,
                     });
                 } else {
                     toast({
                         title: "No More Movies",
-                        description: "You've reached the beginning of our records!",
+                        description: "You've reached the end of the list!",
                     });
                 }
             } catch (e) {

@@ -25,7 +25,7 @@ async function InitialDataLoader() {
     languages,
     actors
   ] = await Promise.all([
-      getMoviesByCategory('popular'),
+      getMoviesByCategory('popular', 0),
       getMoviesByCategory('top_rated'),
       getMoviesByCategory('upcoming'),
       getMoviesByCategory('recently_released'),
