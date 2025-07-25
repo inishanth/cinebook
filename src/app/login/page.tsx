@@ -15,7 +15,7 @@ import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [username, setUsername] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const user = await loginUser({ username, password });
+      const user = await loginUser({ email, password });
       login(user);
       toast({ title: 'Signed In!', description: 'Welcome back!' });
       router.push('/');
@@ -48,14 +48,14 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter username"
+                id="email"
+                type="email"
+                placeholder="Enter your email"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="space-y-2">

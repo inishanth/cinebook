@@ -66,7 +66,7 @@ export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): 
 
 
 const LoginUserInputSchema = z.object({
-    username: z.string(),
+    email: z.string().email(),
     password: z.string(),
 });
 
@@ -82,18 +82,18 @@ const loginUserFlow = ai.defineFlow(
         inputSchema: LoginUserInputSchema,
         outputSchema: UserOutputSchema,
     },
-    async ({ username, password }) => {
+    async ({ email, password }) => {
         const supabase = getSupabaseClient();
 
         // Step 1: Check if the user exists
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('id, username, email, password_hash')
-            .eq('username', username)
+            .eq('email', email)
             .single();
 
         if (userError || !user) {
-            throw new Error('Username does not exist.');
+            throw new Error('Email address does not exist.');
         }
 
         // Step 2: If user exists, compare the password

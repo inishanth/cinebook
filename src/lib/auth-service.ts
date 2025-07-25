@@ -30,7 +30,7 @@ export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): 
     }
 }
 
-export async function loginUser(credentials: Pick<User, 'username' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'>> {
+export async function loginUser(credentials: Pick<User, 'email' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'>> {
     try {
         return await loginUserFlow(credentials);
     } catch (error) {
