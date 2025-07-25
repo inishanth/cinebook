@@ -1,8 +1,7 @@
-
 'use client';
 
 import * as React from 'react';
-import { Search, X, User, LogOut } from 'lucide-react';
+import { Search, X, User, LogOut, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -21,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
 import { UpcomingReleases } from '../movie/upcoming-releases';
+import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
 
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
@@ -170,7 +170,32 @@ function InlineSearchBar() {
 
 function UserProfileButton() {
     const { user, logout } = useAuth();
+    const { toast } = useToast();
+    const [notificationPermission, setNotificationPermission] = useState(typeof window !== 'undefined' ? Notification.permission : 'default');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            setNotificationPermission(Notification.permission);
+        }
+        initializeFirebase();
+    }, []);
     
+    const handleNotificationRequest = async () => {
+        try {
+            const permission = await requestNotificationPermission();
+            setNotificationPermission(permission);
+            if (permission === 'granted') {
+                toast({ title: "Notifications Enabled!", description: "You'll now receive updates." });
+            } else {
+                toast({ variant: 'destructive', title: "Notifications Blocked", description: "You can enable notifications from your browser settings." });
+            }
+        } catch (error) {
+            console.error('Error handling notification permission:', error);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            toast({ variant: 'destructive', title: "Error", description: errorMessage });
+        }
+    };
+
     if (!user) {
         return (
             <Link href="/login">
@@ -198,6 +223,25 @@ function UserProfileButton() {
                     <div className="space-y-1">
                         <p className="font-bold text-sm">{user.username}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <Separator />
+                     <div className="space-y-2">
+                        <p className="font-semibold text-sm">Notifications</p>
+                        {notificationPermission === 'default' && (
+                            <Button variant="outline" className="w-full" onClick={handleNotificationRequest}>
+                                <Bell className="mr-2 h-4 w-4" /> Enable Notifications
+                            </Button>
+                        )}
+                        {notificationPermission === 'granted' && (
+                             <div className="flex items-center justify-between text-sm text-muted-foreground p-2 bg-secondary rounded-md">
+                                <span><Bell className="inline mr-2 h-4 w-4 text-green-500" />Enabled</span>
+                             </div>
+                        )}
+                         {notificationPermission === 'denied' && (
+                            <div className="flex items-center justify-between text-sm text-muted-foreground p-2 bg-destructive/20 text-destructive-foreground rounded-md">
+                                <span><BellOff className="inline mr-2 h-4 w-4" />Denied</span>
+                            </div>
+                        )}
                     </div>
                     <Separator />
                     <Button variant="ghost" className="justify-start p-2 h-auto" onClick={logout}>
