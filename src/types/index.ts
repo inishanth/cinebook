@@ -48,5 +48,6 @@ export interface User {
     id: number;
     email: string;
     username: string;
-    password?: string; // Should be hashed
+    password?: string;
+    password_hash?: string;
 }

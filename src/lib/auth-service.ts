@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
-import { createUser as createUserFlow } from '@/ai/flows/auth-flow';
+import { createUser as createUserFlow, loginUser as loginUserFlow } from '@/ai/flows/auth-flow';
 import type { User } from '@/types';
 
 let supabase: ReturnType<typeof createClient>;
@@ -20,12 +20,20 @@ function getSupabaseClient() {
   return supabase;
 }
 
-export async function createUser(userData: Omit<User, 'id'>): Promise<void> {
+export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): Promise<void> {
     try {
         await createUserFlow(userData);
     } catch (error) {
         // The flow will throw an error if the user exists or if insertion fails.
         // We can re-throw it to be caught by the UI.
+        throw error;
+    }
+}
+
+export async function loginUser(credentials: Pick<User, 'username' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'>> {
+    try {
+        return await loginUserFlow(credentials);
+    } catch (error) {
         throw error;
     }
 }
@@ -38,7 +46,7 @@ CREATE TABLE users (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   username TEXT UNIQUE NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL, -- This will store the hashed password
+  password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 */

@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, X, User } from 'lucide-react';
+import { Search, X, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -16,6 +16,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/auth-context';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Separator } from '../ui/separator';
+
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -162,11 +167,54 @@ function InlineSearchBar() {
 }
 
 
+function UserProfileButton() {
+    const { user, logout } = useAuth();
+    
+    if (!user) {
+        return (
+            <Link href="/login">
+                <Button variant="ghost" size="icon">
+                    <User className="h-6 w-6" />
+                    <span className="sr-only">Profile</span>
+                </Button>
+            </Link>
+        )
+    }
+    
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar>
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                            {user.username.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 mr-4">
+                <div className="flex flex-col space-y-4">
+                    <div className="space-y-1">
+                        <p className="font-bold text-sm">{user.username}</p>
+                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                    <Separator />
+                    <Button variant="ghost" className="justify-start p-2 h-auto" onClick={logout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                    </Button>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
 export function TopHeader() {
     const { scrollY } = useScroll();
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
-    const isLoginPage = pathname === '/login';
+    const isLoginPage = pathname === '/login' || pathname === '/signup';
+    const { isLoading: isAuthLoading } = useAuth();
 
     useEffect(() => {
         return scrollY.on('change', (latest) => {
@@ -193,12 +241,7 @@ export function TopHeader() {
                             <InlineSearchBar />
                         </div>
                         <div className="flex items-center gap-2 ml-auto">
-                            <Link href="/login">
-                                <Button variant="ghost" size="icon">
-                                    <User className="h-6 w-6" />
-                                    <span className="sr-only">Profile</span>
-                                </Button>
-                            </Link>
+                            {isAuthLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : <UserProfileButton />}
                         </div>
                     </>
                 )}

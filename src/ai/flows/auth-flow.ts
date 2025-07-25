@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview Authentication flows for handling user creation.
+ * @fileOverview Authentication flows for handling user creation and login.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -71,6 +71,47 @@ const createUserFlow = ai.defineFlow(
     }
 );
 
-export async function createUser(userData: Omit<User, 'id'>): Promise<void> {
+export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): Promise<void> {
     await createUserFlow(userData);
+}
+
+
+const LoginUserInputSchema = z.object({
+    username: z.string(),
+    password: z.string(),
+});
+
+const UserOutputSchema = z.object({
+    id: z.number(),
+    username: z.string(),
+    email: z.string().email(),
+});
+
+const loginUserFlow = ai.defineFlow(
+    {
+        name: 'loginUserFlow',
+        inputSchema: LoginUserInputSchema,
+        outputSchema: UserOutputSchema,
+    },
+    async ({ username, password }) => {
+        const supabase = getSupabaseClient();
+        const hashedPassword = simpleHash(password);
+
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, username, email')
+            .eq('username', username)
+            .eq('password_hash', hashedPassword)
+            .single();
+
+        if (error || !data) {
+            throw new Error('Invalid username or password.');
+        }
+
+        return data;
+    }
+);
+
+export async function loginUser(credentials: z.infer<typeof LoginUserInputSchema>): Promise<z.infer<typeof UserOutputSchema>> {
+    return await loginUserFlow(credentials);
 }
