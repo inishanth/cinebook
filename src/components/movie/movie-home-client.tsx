@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
-    { id: 'upcoming', title: 'Upcoming' },
     { id: 'recently_released', title: 'Recently Released' },
 ];
 
