@@ -20,6 +20,7 @@ import { useAuth } from '@/context/auth-context';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
+import { UpcomingReleases } from '../movie/upcoming-releases';
 
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
@@ -231,9 +232,9 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <a href="/" className={cn("flex items-center gap-2", isLoginPage ? 'mx-auto' : 'mr-auto')}>
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
-                        CB
+                        RD
                     </div>
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
                 </a>
                 {!isLoginPage && (
                     <>
@@ -241,6 +242,7 @@ export function TopHeader() {
                             <InlineSearchBar />
                         </div>
                         <div className="flex items-center gap-2 ml-auto">
+                            <UpcomingReleases />
                             {isAuthLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : <UserProfileButton />}
                         </div>
                     </>

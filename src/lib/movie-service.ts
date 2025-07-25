@@ -233,3 +233,16 @@ export const getLeadActors = async (): Promise<Person[]> => {
     
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
+
+export const getUpcomingMovies = async (language: string): Promise<Movie[]> => {
+    const supabase = getSupabaseClient();
+    const query = supabase
+        .from('movies')
+        .select('*')
+        .eq('language', language)
+        .gte('release_date', new Date().toISOString())
+        .order('release_date', { ascending: true })
+        .limit(20);
+    
+    return handleSupabaseError(await query);
+};
