@@ -35,7 +35,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
 
     switch (categoryId) {
         case 'popular':
-            query = query.order('popularity', { ascending: false, nullsFirst: false });
+            query = query.order('vote_average', { ascending: false, nullsFirst: false });
             break;
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
@@ -47,7 +47,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
             break;
         default:
-            query = query.order('popularity', { ascending: false });
+            query = query.order('vote_average', { ascending: false });
             break;
     }
 
