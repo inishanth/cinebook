@@ -31,41 +31,12 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
-    if (categoryId === 'popular') {
-        const { data: genres, error: genresError } = await supabase.from('genres').select('id');
-        if (genresError) {
-            console.error('Error fetching genres:', genresError);
-            throw new Error(genresError.message);
-        }
-        
-        const popularMoviesPromises = genres.map(async (genre) => {
-            const { data: movie, error: movieError } = await supabase
-                .from('movies')
-                .select('*, movie_genres!inner(genre_id)')
-                .eq('movie_genres.genre_id', genre.id)
-                .order('vote_average', { ascending: false, nullsFirst: false })
-                .gt('vote_count', 100) // Ensure some level of popularity
-                .limit(1)
-                .single();
-            
-            if (movieError && movieError.code !== 'PGRST116') { // Ignore 'No rows found' error
-                console.warn(`Could not find top movie for genre ${genre.id}:`, movieError.message);
-                return null;
-            }
-            return movie;
-        });
-
-        const popularMoviesByGenre = await Promise.all(popularMoviesPromises);
-        
-        // Filter out nulls and remove duplicates
-        const uniqueMovies = Array.from(new Map(popularMoviesByGenre.filter(Boolean).map(movie => [movie!.id, movie])).values());
-        
-        return uniqueMovies.sort((a,b) => b.vote_average - a.vote_average);
-    }
-
     let query = supabase.from('movies').select('*');
 
     switch (categoryId) {
+        case 'popular':
+            query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
+            break;
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
             break;
@@ -76,7 +47,6 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
             break;
         default:
-            // Default to popular if category is unknown, though handled above
             query = query.order('vote_average', { ascending: false });
             break;
     }
