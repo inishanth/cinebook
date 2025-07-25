@@ -1,4 +1,5 @@
 
+
 export interface Movie {
   id: number;
   title: string;
@@ -41,4 +42,11 @@ export interface MovieDetails extends Movie {
       release_dates: { certification: string }[];
     }[];
   };
+}
+
+export interface User {
+    id: number;
+    email: string;
+    username: string;
+    password?: string; // Should be hashed
 }
