@@ -9,7 +9,7 @@ import { BottomTabBar } from '@/components/layout/bottom-tab-bar';
 import { TopHeader } from '@/components/layout/top-header';
 
 export const metadata: Metadata = {
-  title: 'ReelDeal',
+  title: 'CineBook',
   description: 'Find your next favorite movie.',
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Inter:wght@400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Inter:wght@400&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
         <AuthProvider>

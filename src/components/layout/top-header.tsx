@@ -232,9 +232,9 @@ export function TopHeader() {
             <div className="container flex h-16 items-center">
                 <a href="/" className={cn("flex items-center gap-2", isLoginPage ? 'mx-auto' : 'mr-auto')}>
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
-                        RD
+                        CB
                     </div>
-                    <h1 className="text-2xl font-headline text-primary hidden sm:block">ReelDeal</h1>
+                    <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </a>
                 {!isLoginPage && (
                     <>

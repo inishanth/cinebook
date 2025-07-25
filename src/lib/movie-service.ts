@@ -234,15 +234,22 @@ export const getLeadActors = async (): Promise<Person[]> => {
     return people.sort((a,b) => a.name.localeCompare(b.name));
 };
 
-export const getUpcomingMovies = async (language: string): Promise<Movie[]> => {
+export const getUpcomingMovies = async ({ language, region }: { language: string, region: string }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
-    const query = supabase
+    let query = supabase
         .from('movies')
         .select('*')
-        .eq('language', language)
         .gte('release_date', new Date().toISOString())
         .order('release_date', { ascending: true })
         .limit(20);
+
+    if (language) {
+        query = query.eq('language', language);
+    }
+    
+    // The region filter would typically be applied on a join with a releases table.
+    // Since our schema doesn't have that, we are filtering by language which is often region-specific.
+    // For a real-world scenario, you'd have a `movie_releases` table with `country_iso_3166_1`
     
     return handleSupabaseError(await query);
 };

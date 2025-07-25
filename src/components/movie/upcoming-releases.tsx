@@ -11,13 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { getUpcomingMovies } from '@/lib/movie-service';
 import type { Movie } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
-import { Calendar, X } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 
 function UpcomingMovieItem({ movie }: { movie: Movie }) {
@@ -72,7 +71,7 @@ export function UpcomingReleases() {
   React.useEffect(() => {
     if (isOpen) {
       setLoading(true);
-      getUpcomingMovies('ta') // Hardcoded to Tamil for India region
+      getUpcomingMovies({ language: 'ta', region: 'IN' })
         .then(setMovies)
         .catch(() => {
           toast({
@@ -90,9 +89,10 @@ export function UpcomingReleases() {
       <DialogTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           className="bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-600 rounded-full"
         >
-          Upcoming Releases
+          Upcoming
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px] bg-background/90 backdrop-blur-sm">
@@ -100,10 +100,6 @@ export function UpcomingReleases() {
           <DialogTitle className="text-2xl font-headline text-primary">
             Upcoming Tamil Movies (India)
           </DialogTitle>
-           <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-            </DialogClose>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4 -mr-4">
           {loading ? (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -17,7 +18,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   React.useEffect(() => {
     try {
-      const storedWatchlist = localStorage.getItem('cinebook-watchlist');
+      const storedWatchlist = localStorage.getItem('CineBook-watchlist');
       if (storedWatchlist) {
         setWatchlist(JSON.parse(storedWatchlist));
       }
@@ -28,7 +29,7 @@ export const WatchlistProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   React.useEffect(() => {
     try {
-        localStorage.setItem('cinebook-watchlist', JSON.stringify(watchlist));
+        localStorage.setItem('CineBook-watchlist', JSON.stringify(watchlist));
     } catch (error) {
         console.error("Failed to write watchlist to localStorage", error);
     }
