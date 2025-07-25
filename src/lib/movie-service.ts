@@ -31,12 +31,18 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
 export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
+    if (categoryId === 'popular') {
+        const { data, error } = await supabase.rpc('get_popular_movies_by_genre');
+        if (error) {
+            console.error('Error fetching popular movies by genre:', error);
+            throw new Error(error.message);
+        }
+        return data || [];
+    }
+
     let query = supabase.from('movies').select('*');
 
     switch (categoryId) {
-        case 'popular':
-            query = query.order('vote_average', { ascending: false });
-            break;
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
             break;
@@ -47,7 +53,7 @@ export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> 
             query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
             break;
         default:
-            // Default to popular if category is unknown
+            // Default to popular if category is unknown, though handled above
             query = query.order('vote_average', { ascending: false });
             break;
     }
