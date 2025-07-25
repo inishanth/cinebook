@@ -32,7 +32,7 @@ export default function LoginPage() {
             <span className="absolute left-1/2 -translate-x-1/2 top-[-10px] bg-background px-2 text-xs text-muted-foreground">OR</span>
           </div>
            
-           <Button variant="secondary" className="w-full" asChild>
+           <Button variant="secondary" className="w-full border border-teal-500" asChild>
             <Link href="/">Continue as Guest</Link>
           </Button>
 
