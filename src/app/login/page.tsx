@@ -17,11 +17,11 @@ export default function LoginPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
-            <Input id="username" type="text" placeholder="your_username" required />
+            <Input id="username" type="text" placeholder="Enter username" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required />
+            <Input id="password" type="password" placeholder="Enter password" required />
           </div>
            <Button type="submit" className="w-full">
             Sign In
