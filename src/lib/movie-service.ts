@@ -247,9 +247,5 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
         query = query.eq('language', language);
     }
     
-    if (region === 'IN') {
-        query = query.like('title', '%(India)%');
-    }
-    
     return handleSupabaseError(await query);
 };
