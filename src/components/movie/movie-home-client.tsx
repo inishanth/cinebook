@@ -250,7 +250,7 @@ export function MovieHomeClient({
                  )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
                     <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger className="w-full" variant="secondary" icon={<Film />}>
+                        <SelectTrigger className="w-full" variant="default" icon={<Film />}>
                             <SelectValue placeholder="Genre" />
                         </SelectTrigger>
                         <SelectContent>
@@ -263,7 +263,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                      <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full" variant="secondary" icon={<Users />}>
+                        <SelectTrigger className="w-full" variant="default" icon={<Users />}>
                             <SelectValue placeholder="Actor" />
                         </SelectTrigger>
                         <SelectContent>
@@ -276,7 +276,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                     <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-full" variant="secondary" icon={<Languages />}>
+                        <SelectTrigger className="w-full" variant="default" icon={<Languages />}>
                             <SelectValue placeholder="Language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -289,7 +289,7 @@ export function MovieHomeClient({
                         </SelectContent>
                     </Select>
                     <Select value={selectedRecency} onValueChange={setSelectedRecency}>
-                        <SelectTrigger className="w-full" variant="secondary" icon={<CalendarClock />}>
+                        <SelectTrigger className="w-full" variant="default" icon={<CalendarClock />}>
                             <SelectValue placeholder="Recency" />
                         </SelectTrigger>
                         <SelectContent>
@@ -351,3 +351,5 @@ export function MovieHomeClient({
         </>
     );
 }
+
+    
