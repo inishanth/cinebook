@@ -36,9 +36,14 @@ const createUserFlow = ai.defineFlow(
     async ({ email, username, password }) => {
         const supabase = getSupabaseClient();
         
-        const { data: existingUser } = await supabase.from('users').select('id').eq('email', email).single();
+        const { data: existingUser, error: existingUserError } = await supabase
+            .from('users')
+            .select('id')
+            .or(`email.eq.${email},username.eq.${username}`)
+            .single();
+
         if (existingUser) {
-            throw new Error('An account with this email already exists.');
+            throw new Error('An account with this email or username already exists.');
         }
 
         const { error } = await supabase
