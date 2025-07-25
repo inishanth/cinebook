@@ -4,14 +4,16 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import type { Movie, Genre, Person } from '@/types';
-import { discoverMovies } from '@/lib/movie-service';
+import { discoverMovies, getMoviesByCategory } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 const movieCategories = [
@@ -78,7 +80,7 @@ export function MovieHomeClient({
     initialActors: Person[],
 }) {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
-    const [moviesByCat] = React.useState<Record<string, Movie[]>>(initialMoviesByCat);
+    const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>(initialMoviesByCat);
     
     const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
@@ -89,7 +91,9 @@ export function MovieHomeClient({
     const [isFilteredView, setIsFilteredView] = React.useState(false);
     
     const [loadingFilteredMovies, setLoadingFilteredMovies] = React.useState(false);
+    const [reloadingCategory, setReloadingCategory] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
+    const { toast } = useToast();
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
     
@@ -134,6 +138,26 @@ export function MovieHomeClient({
         setSelectedRecency('all');
         setSelectedActor('all');
         setIsFilteredView(false);
+    }
+    
+    const handleRefreshCategory = async (categoryId: string, categoryTitle: string) => {
+        setReloadingCategory(categoryTitle);
+        try {
+            const freshMovies = await getMoviesByCategory(categoryId);
+            setMoviesByCat(prev => ({ ...prev, [categoryTitle]: freshMovies }));
+             toast({
+                title: "Refreshed!",
+                description: `The "${categoryTitle}" list has been updated.`,
+            });
+        } catch (e) {
+            toast({
+                variant: 'destructive',
+                title: "Refresh Failed",
+                description: `Could not refresh the "${categoryTitle}" list.`,
+            })
+        } finally {
+            setReloadingCategory(null);
+        }
     }
 
     const handleOpenModal = (movie: Movie) => setSelectedMovie(movie);
@@ -273,6 +297,8 @@ export function MovieHomeClient({
                                         title={cat.title}
                                         movies={moviesByCat[cat.title]}
                                         onMovieClick={handleOpenModal}
+                                        onRefresh={cat.id === 'popular' ? () => handleRefreshCategory(cat.id, cat.title) : undefined}
+                                        isLoading={reloadingCategory === cat.title}
                                     />
                                 </motion.div>
                             ) : null
