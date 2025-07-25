@@ -239,7 +239,7 @@ export function MovieHomeClient({
     
     return (
         <>
-            <div className="mb-8 bg-neutral-800 border border-border rounded-2xl p-4">
+            <div className="mb-8 bg-neutral-700/50 border border-border rounded-2xl p-4">
                  {hasActiveFilters && (
                     <div className="flex justify-end mb-4 -mt-2 -mr-2">
                         <Button variant="ghost" onClick={handleClearFilters}>
