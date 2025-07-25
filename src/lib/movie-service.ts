@@ -235,17 +235,48 @@ export const getLeadActors = async (): Promise<Person[]> => {
 };
 
 export const getUpcomingMovies = async ({ language, region }: { language: string, region: string }): Promise<Movie[]> => {
-    const supabase = getSupabaseClient();
-    let query = supabase
-        .from('movies')
-        .select('*')
-        .gte('release_date', new Date().toISOString())
-        .order('release_date', { ascending: true })
-        .limit(20);
-
-    if (language) {
-        query = query.eq('language', language);
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey || apiKey === 'your_tmdb_api_key_here') {
+      console.error('TMDB API key is not configured. Please add it to your .env file.');
+      // Return an empty array or throw an error, depending on desired behavior
+      return [];
     }
+  
+    const today = new Date().toISOString().split('T')[0];
+    const url = new URL('https://api.themoviedb.org/3/discover/movie');
+    const params = {
+      api_key: apiKey,
+      with_original_language: language,
+      region: region,
+      'release_date.gte': today,
+      sort_by: 'release_date.asc',
+      page: '1',
+    };
     
-    return handleSupabaseError(await query);
-};
+    Object.keys(params).forEach(key => url.searchParams.append(key, params[key as keyof typeof params]));
+  
+    try {
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('TMDB API Error:', errorData);
+        throw new Error(`Failed to fetch from TMDB: ${errorData.status_message}`);
+      }
+      const data = await response.json();
+      
+      // Map TMDB response to our Movie type
+      return data.results.map((tmdbMovie: any) => ({
+        id: tmdbMovie.id,
+        title: tmdbMovie.title,
+        poster_url: tmdbMovie.poster_path, // Note the property name change
+        backdrop_path: tmdbMovie.backdrop_path,
+        overview: tmdbMovie.overview,
+        release_date: tmdbMovie.release_date,
+        vote_average: tmdbMovie.vote_average,
+        language: tmdbMovie.original_language,
+      }));
+    } catch (error) {
+      console.error('Error fetching upcoming movies from TMDB:', error);
+      throw error;
+    }
+  };

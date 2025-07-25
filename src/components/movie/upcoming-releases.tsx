@@ -37,7 +37,7 @@ function UpcomingMovieItem({ movie }: { movie: Movie }) {
         <h3 className="font-bold text-lg">{movie.title}</h3>
         <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
           <Calendar className="w-4 h-4" />
-          {format(new Date(movie.release_date), 'MMMM d, yyyy')}
+          {movie.release_date ? format(new Date(movie.release_date), 'MMMM d, yyyy') : 'Date not available'}
         </p>
         <p className="text-sm mt-2 line-clamp-3">{movie.overview}</p>
       </div>
@@ -66,19 +66,26 @@ export function UpcomingReleases() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [movies, setMovies] = React.useState<Movie[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
     if (isOpen) {
       setLoading(true);
+      setError(null);
       getUpcomingMovies({ language: 'ta', region: 'IN' })
         .then(setMovies)
-        .catch(() => {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Could not fetch upcoming movies.',
-          });
+        .catch((err) => {
+          const errorMessage = err instanceof Error ? err.message : 'Could not fetch upcoming movies.';
+          if (errorMessage.includes('TMDB API key is not configured')) {
+            setError('The TMDB API Key is missing. Please add it to your .env file to see upcoming releases.');
+          } else {
+             toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: errorMessage,
+            });
+          }
         })
         .finally(() => setLoading(false));
     }
@@ -104,6 +111,10 @@ export function UpcomingReleases() {
         <ScrollArea className="max-h-[70vh] pr-4 -mr-4">
           {loading ? (
              <LoadingSkeleton />
+          ) : error ? (
+            <p className="text-center text-destructive-foreground bg-destructive/80 p-4 rounded-md">
+              {error}
+            </p>
           ) : movies.length > 0 ? (
             <div className="divide-y divide-border">
               {movies.map((movie) => (
@@ -112,7 +123,7 @@ export function UpcomingReleases() {
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-10">
-              No upcoming releases found.
+              No upcoming releases found matching the criteria.
             </p>
           )}
         </ScrollArea>
