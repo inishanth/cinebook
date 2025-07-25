@@ -23,7 +23,7 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" placeholder="Enter password" required />
           </div>
-           <Button type="submit" className="w-full">
+           <Button type="submit" className="w-full border border-primary" variant="outline">
             Sign In
           </Button>
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
             <span className="absolute left-1/2 -translate-x-1/2 top-[-10px] bg-background px-2 text-xs text-muted-foreground">OR</span>
           </div>
            
-           <Button variant="secondary" className="w-full border border-teal-500" asChild>
+           <Button variant="outline" className="w-full border border-primary" asChild>
             <Link href="/">Continue as Guest</Link>
           </Button>
 
