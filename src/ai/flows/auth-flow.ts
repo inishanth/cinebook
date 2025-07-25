@@ -62,7 +62,7 @@ const createUserFlow = ai.defineFlow(
             .insert({
                 email,
                 username,
-                password: hashedPassword,
+                password_hash: hashedPassword,
             });
         
         if (error) {
