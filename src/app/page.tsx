@@ -9,6 +9,7 @@ import { Suspense } from 'react';
 const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
+    { id: 'on_the_air', title: 'Currently Airing' },
     { id: 'upcoming', title: 'Upcoming' },
     { id: 'recently_released', title: 'Recently Released' },
 ];
@@ -19,6 +20,7 @@ async function InitialDataLoader() {
   const [
     popular,
     topRated,
+    onTheAir,
     upcoming,
     recentlyReleased,
     genres,
@@ -27,6 +29,7 @@ async function InitialDataLoader() {
   ] = await Promise.all([
       getMoviesByCategory('popular', 0),
       getMoviesByCategory('top_rated'),
+      getMoviesByCategory('on_the_air'),
       getMoviesByCategory('upcoming'),
       getMoviesByCategory('recently_released'),
       getGenres(),
@@ -36,6 +39,7 @@ async function InitialDataLoader() {
 
   moviesByCat['Popular'] = popular;
   moviesByCat['Top Rated'] = topRated;
+  moviesByCat['Currently Airing'] = onTheAir;
   moviesByCat['Upcoming'] = upcoming;
   moviesByCat['Recently Released'] = recentlyReleased;
 
