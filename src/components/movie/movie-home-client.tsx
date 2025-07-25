@@ -94,6 +94,9 @@ export function MovieHomeClient({
     const [reloadingCategory, setReloadingCategory] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const { toast } = useToast();
+
+    const [popularMoviesMonthOffset, setPopularMoviesMonthOffset] = React.useState(0);
+    const [reloadingCategoryPage, setReloadingCategoryPage] = React.useState(false);
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
     
@@ -141,22 +144,51 @@ export function MovieHomeClient({
     }
     
     const handleRefreshCategory = async (categoryId: string, categoryTitle: string) => {
-        setReloadingCategory(categoryTitle);
-        try {
-            const freshMovies = await getMoviesByCategory(categoryId);
-            setMoviesByCat(prev => ({ ...prev, [categoryTitle]: freshMovies }));
-             toast({
-                title: "Refreshed!",
-                description: `The "${categoryTitle}" list has been updated.`,
-            });
-        } catch (e) {
-            toast({
-                variant: 'destructive',
-                title: "Refresh Failed",
-                description: `Could not refresh the "${categoryTitle}" list.`,
-            })
-        } finally {
-            setReloadingCategory(null);
+        if (categoryId === 'popular') {
+            setReloadingCategoryPage(true);
+            const nextOffset = popularMoviesMonthOffset + 1;
+            try {
+                const freshMovies = await getMoviesByCategory(categoryId, nextOffset);
+                if (freshMovies.length > 0) {
+                    setMoviesByCat(prev => ({ ...prev, [categoryTitle]: freshMovies }));
+                    setPopularMoviesMonthOffset(nextOffset);
+                    toast({
+                        title: "Refreshed!",
+                        description: `Showing popular movies from a month ago.`,
+                    });
+                } else {
+                    toast({
+                        title: "No More Movies",
+                        description: "You've reached the beginning of our records!",
+                    });
+                }
+            } catch (e) {
+                toast({
+                    variant: 'destructive',
+                    title: "Refresh Failed",
+                    description: `Could not refresh the "${categoryTitle}" list.`,
+                })
+            } finally {
+                setReloadingCategoryPage(false);
+            }
+        } else {
+            setReloadingCategory(categoryTitle);
+            try {
+                const freshMovies = await getMoviesByCategory(categoryId);
+                setMoviesByCat(prev => ({ ...prev, [categoryTitle]: freshMovies }));
+                 toast({
+                    title: "Refreshed!",
+                    description: `The "${categoryTitle}" list has been updated.`,
+                });
+            } catch (e) {
+                toast({
+                    variant: 'destructive',
+                    title: "Refresh Failed",
+                    description: `Could not refresh the "${categoryTitle}" list.`,
+                })
+            } finally {
+                setReloadingCategory(null);
+            }
         }
     }
 
@@ -298,7 +330,7 @@ export function MovieHomeClient({
                                         movies={moviesByCat[cat.title]}
                                         onMovieClick={handleOpenModal}
                                         onRefresh={cat.id === 'popular' ? () => handleRefreshCategory(cat.id, cat.title) : undefined}
-                                        isLoading={reloadingCategory === cat.title}
+                                        isLoading={reloadingCategory === cat.title || (cat.id === 'popular' && reloadingCategoryPage)}
                                     />
                                 </motion.div>
                             ) : null

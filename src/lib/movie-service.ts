@@ -3,7 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Movie, MovieDetails, Genre, Person } from '@/types';
-import { sub, format } from 'date-fns';
+import { sub, format, startOfMonth, endOfMonth } from 'date-fns';
 
 let supabase: ReturnType<typeof createClient>;
 
@@ -28,14 +28,23 @@ async function handleSupabaseError<T>(response: { data: T; error: any }): Promis
   return response.data;
 }
 
-export const getMoviesByCategory = async (categoryId: string): Promise<Movie[]> => {
+export const getMoviesByCategory = async (categoryId: string, monthOffset = 0): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
     
     let query = supabase.from('movies').select('*');
 
     switch (categoryId) {
         case 'popular':
-            query = query.gte('vote_count', 10).order('release_date', { ascending: false }).order('vote_average', { ascending: false, nullsFirst: false });
+            const targetDate = sub(new Date(), { months: monthOffset });
+            const startDate = format(startOfMonth(targetDate), 'yyyy-MM-dd');
+            const endDate = format(endOfMonth(targetDate), 'yyyy-MM-dd');
+
+            query = query
+                .gte('vote_count', 10)
+                .gte('release_date', startDate)
+                .lte('release_date', endDate)
+                .order('release_date', { ascending: false })
+                .order('vote_average', { ascending: false, nullsFirst: false });
             break;
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gt('vote_count', 500);
