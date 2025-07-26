@@ -57,7 +57,7 @@ export default function SignupPage() {
 
   const pageTransition = {
     type: 'tween',
-    ease: 'anticipate',
+    ease: 'easeInOut',
     duration: 0.5,
   };
 

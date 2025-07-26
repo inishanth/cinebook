@@ -22,7 +22,7 @@ const pageVariants = {
 
 const pageTransition = {
   type: 'tween',
-  ease: 'anticipate',
+  ease: 'easeInOut',
   duration: 0.4,
 };
 
