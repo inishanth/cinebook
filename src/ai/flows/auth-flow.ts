@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { sendEmail } from '@/lib/db-service';
+import { sendEmail } from './email-flow';
 
 const saltRounds = 10;
 
