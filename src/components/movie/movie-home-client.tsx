@@ -10,12 +10,14 @@ import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX } from 'lucide-react';
+import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getLanguageName } from '@/lib/utils';
 import { movieCategories } from '@/lib/movie-categories';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const recencyOptions = [
@@ -63,6 +65,76 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
     )
 }
 
+function FilterControls({
+    genres, actors, languages,
+    selectedGenre, setSelectedGenre,
+    selectedActor, setSelectedActor,
+    selectedLanguage, setSelectedLanguage,
+    selectedRecency, setSelectedRecency
+}: {
+    genres: Genre[], actors: Person[], languages: string[],
+    selectedGenre: string, setSelectedGenre: (v: string) => void,
+    selectedActor: string, setSelectedActor: (v: string) => void,
+    selectedLanguage: string, setSelectedLanguage: (v: string) => void,
+    selectedRecency: string, setSelectedRecency: (v: string) => void,
+}) {
+    return (
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                <SelectTrigger className="w-full" icon={<Film />}>
+                    <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Genres</SelectItem>
+                    {genres.map(genre => (
+                        <SelectItem key={genre.id} value={String(genre.id)}>
+                            {genre.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+                <Select value={selectedActor} onValueChange={setSelectedActor}>
+                <SelectTrigger className="w-full" icon={<Users />}>
+                    <SelectValue placeholder="Actor" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Actors</SelectItem>
+                    {actors.map(actor => (
+                        <SelectItem key={actor.id} value={String(actor.id)}>
+                            {actor.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger className="w-full" icon={<Languages />}>
+                    <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Languages</SelectItem>
+                    {languages.map(lang => (
+                        <SelectItem key={lang} value={lang}>
+                            {getLanguageName(lang)}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select value={selectedRecency} onValueChange={setSelectedRecency}>
+                <SelectTrigger className="w-full" icon={<CalendarClock />}>
+                    <SelectValue placeholder="Recency" />
+                </SelectTrigger>
+                <SelectContent>
+                    {recencyOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    )
+}
+
 export function MovieHomeClient({ 
     initialMoviesByCat,
 }: { 
@@ -87,6 +159,7 @@ export function MovieHomeClient({
     const [reloadingCategory, setReloadingCategory] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const { toast } = useToast();
+    const isMobile = useIsMobile();
 
     const [popularMoviesPage, setPopularMoviesPage] = React.useState(0);
     const [reloadingCategoryPage, setReloadingCategoryPage] = React.useState(false);
@@ -249,9 +322,11 @@ export function MovieHomeClient({
         );
     }
     
+    const filterProps = { genres, actors, languages, selectedGenre, setSelectedGenre, selectedActor, setSelectedActor, selectedLanguage, setSelectedLanguage, selectedRecency, setSelectedRecency };
+
     return (
         <>
-            <div className="mb-8 bg-neutral-800 border border-border rounded-2xl p-4">
+            <div className="mb-8">
                  {hasActiveFilters && (
                     <div className="flex justify-end mb-4 -mt-2 -mr-2">
                         <Button variant="ghost" onClick={handleClearFilters}>
@@ -260,59 +335,34 @@ export function MovieHomeClient({
                         </Button>
                     </div>
                  )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-                    <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                        <SelectTrigger className="w-full" icon={<Film />}>
-                            <SelectValue placeholder="Genre" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genres</SelectItem>
-                            {genres.map(genre => (
-                                <SelectItem key={genre.id} value={String(genre.id)}>
-                                    {genre.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                     <Select value={selectedActor} onValueChange={setSelectedActor}>
-                        <SelectTrigger className="w-full" icon={<Users />}>
-                            <SelectValue placeholder="Actor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Actors</SelectItem>
-                            {actors.map(actor => (
-                                <SelectItem key={actor.id} value={String(actor.id)}>
-                                    {actor.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-full" icon={<Languages />}>
-                            <SelectValue placeholder="Language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Languages</SelectItem>
-                            {languages.map(lang => (
-                                <SelectItem key={lang} value={lang}>
-                                    {getLanguageName(lang)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Select value={selectedRecency} onValueChange={setSelectedRecency}>
-                        <SelectTrigger className="w-full" icon={<CalendarClock />}>
-                            <SelectValue placeholder="Recency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {recencyOptions.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                {isMobile ? (
+                    <Drawer>
+                        <DrawerTrigger asChild>
+                             <Button variant="outline" className="w-full">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filters
+                            </Button>
+                        </DrawerTrigger>
+                        <DrawerContent>
+                            <DrawerHeader>
+                                <DrawerTitle>Filter Movies</DrawerTitle>
+                                <DrawerDescription>Find your next favorite movie.</DrawerDescription>
+                            </DrawerHeader>
+                            <div className="p-4">
+                                <FilterControls {...filterProps} />
+                            </div>
+                            <DrawerFooter>
+                                <DrawerClose asChild>
+                                    <Button>Apply Filters</Button>
+                                </DrawerClose>
+                            </DrawerFooter>
+                        </DrawerContent>
+                    </Drawer>
+                ) : (
+                    <div className="bg-neutral-800 border border-border rounded-2xl p-4">
+                        <FilterControls {...filterProps} />
+                    </div>
+                )}
             </div>
 
             {isFilteredView ? (
