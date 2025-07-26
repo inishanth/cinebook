@@ -22,6 +22,9 @@ function getSupabaseClient() {
 
 async function handleSupabaseError<T>(response: { data: T; error: any }): Promise<T> {
   if (response.error) {
+    if (response.error.code === 'PGRST116') { // PGRST116 is the code for "No rows found"
+        throw new Error('Movie not found in Supabase');
+    }
     console.error('Supabase Query Error:', response.error);
     throw new Error(`Failed to fetch data from Supabase. Details: ${response.error.message}`);
   }
@@ -58,56 +61,101 @@ export const getMoviesByCategory = async (categoryId: string, page = 0): Promise
     return handleSupabaseError(response);
 }
 
+const getMovieDetailsFromTMDB = async (movieId: number): Promise<MovieDetails> => {
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey || apiKey === 'your_tmdb_api_key_here') {
+      throw new Error('TMDB API key is not configured.');
+    }
+  
+    const url = new URL(`https://api.themoviedb.org/3/movie/${movieId}`);
+    url.searchParams.append('api_key', apiKey);
+    url.searchParams.append('append_to_response', 'credits,videos');
+  
+    try {
+      const response = await fetch(url.toString());
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to fetch from TMDB: ${errorData.status_message}`);
+      }
+      const data = await response.json();
+  
+      return {
+        id: data.id,
+        title: data.title,
+        poster_url: data.poster_path,
+        backdrop_path: data.backdrop_path,
+        overview: data.overview,
+        release_date: data.release_date,
+        vote_average: data.vote_average,
+        vote_count: data.vote_count,
+        language: data.original_language,
+        genres: data.genres || [],
+        runtime: data.runtime,
+        cast: (data.credits?.cast || []).slice(0, 3).map((c: any) => c.name),
+        videos: data.videos || { results: [] },
+        credits: data.credits || { cast: [], crew: [] },
+        release_dates: { results: [] }, // Mocked as not needed for this path
+      };
+    } catch (error) {
+      console.error('Error fetching movie details from TMDB:', error);
+      throw error;
+    }
+  };
+
 export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
-    const supabase = getSupabaseClient();
+    try {
+        const supabase = getSupabaseClient();
 
-    const movieResponse = await supabase
-      .from('movies')
-      .select(`*`)
-      .eq('id', movieId)
-      .single();
+        const movieResponse = await supabase
+          .from('movies')
+          .select(`*`)
+          .eq('id', movieId)
+          .single();
 
-    const movieData = await handleSupabaseError(movieResponse);
-    
-    if (!movieData) {
-        throw new Error('Movie not found');
-    }
-    
-    const genresResponse = await supabase
-        .from('movie_genres')
-        .select(`genres(id, name)`)
-        .eq('movie_id', movieId);
+        const movieData = await handleSupabaseError(movieResponse);
         
-    const genresData = await handleSupabaseError(genresResponse);
-    const genres = (genresData || []).map((g: any) => g.genres).filter(Boolean);
+        const genresResponse = await supabase
+            .from('movie_genres')
+            .select(`genres(id, name)`)
+            .eq('movie_id', movieId);
+            
+        const genresData = await handleSupabaseError(genresResponse);
+        const genres = (genresData || []).map((g: any) => g.genres).filter(Boolean);
 
-    // Get Top 3 Cast
-    const { data: castData, error: castError } = await supabase
-        .from('movie_cast')
-        .select(`
-            cast_order,
-            cast_members ( name )
-        `)
-        .eq('movie_id', movieId)
-        .in('cast_order', [0, 1, 2])
-        .order('cast_order', { ascending: true });
+        const { data: castData, error: castError } = await supabase
+            .from('movie_cast')
+            .select(`
+                cast_order,
+                cast_members ( name )
+            `)
+            .eq('movie_id', movieId)
+            .in('cast_order', [0, 1, 2])
+            .order('cast_order', { ascending: true });
 
-    if (castError) {
-        console.error('Error fetching cast:', castError);
+        if (castError) {
+            console.error('Error fetching cast:', castError);
+        }
+        
+        const cast = (castData || [])
+            .map(c => c.cast_members?.name)
+            .filter((name, index, self) => name && self.indexOf(name) === index) as string[];
+
+        return {
+            ...movieData,
+            genres,
+            cast,
+            videos: { results: [] },
+            credits: { cast: [], crew: [] }, 
+            release_dates: { results: [] },
+        } as MovieDetails;
+    } catch (error: any) {
+        if (error.message.includes('Movie not found in Supabase')) {
+            // If the movie is not in our DB, fetch from TMDB as a fallback
+            return getMovieDetailsFromTMDB(movieId);
+        }
+        // Re-throw other errors
+        throw error;
     }
-    
-    const cast = (castData || [])
-        .map(c => c.cast_members?.name)
-        .filter((name, index, self) => name && self.indexOf(name) === index) as string[];
-
-    return {
-        ...movieData,
-        genres,
-        cast,
-        videos: { results: [] }, // Mocked as not in schema
-        credits: { cast: [], crew: [] }, // Mocked as not in schema
-        release_dates: { results: [] }, // Mocked as not in schema
-    } as MovieDetails;
 };
 
 export const searchMovies = async (query: string): Promise<Movie[]> => {
@@ -292,6 +340,7 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
         vote_average: tmdbMovie.vote_average,
         language: tmdbMovie.original_language,
         vote_count: tmdbMovie.vote_count,
+        runtime: tmdbMovie.runtime,
       }));
     } catch (error) {
       console.error('Error fetching upcoming movies from TMDB:', error);

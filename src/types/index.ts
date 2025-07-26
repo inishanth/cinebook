@@ -9,6 +9,8 @@ export interface Movie {
   release_date: string;
   vote_average: number;
   language: string;
+  vote_count: number;
+  runtime?: number;
 }
 
 export interface Genre {
