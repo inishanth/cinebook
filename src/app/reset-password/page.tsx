@@ -17,7 +17,9 @@ export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const [email, setEmail] = React.useState('');
+  const emailFromQuery = searchParams.get('email');
+
+  const [email, setEmail] = React.useState(emailFromQuery || '');
   const [otp, setOtp] = React.useState('');
   const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
@@ -35,14 +37,7 @@ export default function ResetPasswordPage() {
     if (accessToken) {
       setOtp(accessToken);
     }
-    
-    // For user convenience, let's try to get email from query params
-    const emailFromQuery = searchParams.get('email');
-    if (emailFromQuery) {
-      setEmail(emailFromQuery);
-    }
-
-  }, [searchParams]);
+  }, []);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,8 +115,8 @@ export default function ResetPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className={!email ? "" : "bg-secondary"}
-                  readOnly={!!searchParams.get('email')}
+                  className={!emailFromQuery ? "" : "bg-secondary"}
+                  readOnly={!!emailFromQuery}
                 />
               </div>
               <div className="space-y-2">
