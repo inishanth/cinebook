@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { loginUser, sendPasswordResetEmail } from '@/lib/auth-service';
+import { loginUser, sendPasswordResetOtp } from '@/lib/auth-service';
 import { useAuth } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
 import {
@@ -25,18 +25,18 @@ import {
 } from '@/components/ui/dialog';
 
 
-function ResetPasswordDialog() {
+function ResetPasswordDialog({ onEmailSent }: { onEmailSent: (email: string) => void }) {
   const [email, setEmail] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isSuccess, setIsSuccess] = React.useState(false);
   const { toast } = useToast();
 
   const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await sendPasswordResetEmail(email);
-      setIsSuccess(true);
+      await sendPasswordResetOtp(email);
+      toast({ title: 'OTP Sent!', description: `A reset code has been sent to ${email}.` });
+      onEmailSent(email);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
       toast({ variant: 'destructive', title: 'Error', description: errorMessage });
@@ -48,45 +48,35 @@ function ResetPasswordDialog() {
   return (
       <DialogContent>
           <DialogHeader>
-              <DialogTitle>{isSuccess ? 'Check Your Email' : 'Reset Password'}</DialogTitle>
+              <DialogTitle>Reset Password</DialogTitle>
               <DialogDescription>
-                  {isSuccess
-                      ? `We've sent a password reset link to ${email}. Please check your inbox (and spam folder) to proceed.`
-                      : 'Enter your email address and we will send you a link to reset your password.'}
+                Enter your email address and we will send you a 4-digit code to reset your password.
               </DialogDescription>
           </DialogHeader>
-          {!isSuccess ? (
-              <form onSubmit={handleResetRequest}>
-                  <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="reset-email">Email</Label>
-                          <Input
-                              id="reset-email"
-                              type="email"
-                              placeholder="you@example.com"
-                              required
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                          />
-                      </div>
+          <form onSubmit={handleResetRequest}>
+              <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email</Label>
+                      <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                      />
                   </div>
-                  <DialogFooter>
-                      <DialogClose asChild>
-                          <Button type="button" variant="ghost">Cancel</Button>
-                      </DialogClose>
-                      <Button type="submit" disabled={isLoading}>
-                          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Send Reset Link
-                      </Button>
-                  </DialogFooter>
-              </form>
-          ) : (
-             <DialogFooter>
-                 <DialogClose asChild>
-                     <Button>Close</Button>
-                 </DialogClose>
-             </DialogFooter>
-          )}
+              </div>
+              <DialogFooter>
+                  <DialogClose asChild>
+                      <Button type="button" variant="ghost">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Send Code
+                  </Button>
+              </DialogFooter>
+          </form>
       </DialogContent>
   );
 }
@@ -115,6 +105,11 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleEmailSent = (sentEmail: string) => {
+    setIsResetPasswordOpen(false);
+    router.push(`/reset-password?email=${encodeURIComponent(sentEmail)}`);
   };
 
   return (
@@ -179,7 +174,7 @@ export default function LoginPage() {
           </form>
         </Card>
       </div>
-      <ResetPasswordDialog />
+      <ResetPasswordDialog onEmailSent={handleEmailSent} />
     </Dialog>
   );
 }

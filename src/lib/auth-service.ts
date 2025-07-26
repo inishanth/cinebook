@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
-import { createUser as createUserFlow, loginUser as loginUserFlow, logoutUser as logoutUserFlow, sendPasswordResetEmail as sendPasswordResetEmailFlow, updatePassword as updatePasswordFlow } from '@/ai/flows/auth-flow';
+import { createUser as createUserFlow, loginUser as loginUserFlow, logoutUser as logoutUserFlow, sendPasswordResetOtp as sendPasswordResetOtpFlow, resetPassword as resetPasswordFlow } from '@/ai/flows/auth-flow';
 import type { User } from '@/types';
 import { headers } from 'next/headers';
 
@@ -51,23 +51,23 @@ export async function logoutUser(session_token: string): Promise<void> {
     }
 }
 
-export async function sendPasswordResetEmail(email: string): Promise<void> {
+export async function sendPasswordResetOtp(email: string): Promise<void> {
     try {
-        await sendPasswordResetEmailFlow({ email });
+        await sendPasswordResetOtpFlow({ email });
     } catch (error) {
         throw error;
     }
 }
 
-export async function updatePassword(newPassword: string, accessToken: string): Promise<void> {
+export async function resetPassword(data: {email: string, otp: string, newPassword: string}): Promise<void> {
     try {
-        await updatePasswordFlow({ newPassword, accessToken });
+        await resetPasswordFlow(data);
     } catch (error) {
         throw error;
     }
 }
 
-// NOTE: You would need to create the 'users' table in your Supabase project.
+// NOTE: You would need to create the tables in your Supabase project.
 /*
 -- SQL for 'users' table
 CREATE TABLE users (
@@ -79,4 +79,57 @@ CREATE TABLE users (
   last_login_time TIMESTAMPTZ,
   last_login_ip TEXT
 );
+
+-- SQL for 'password_resets' table
+CREATE TABLE password_resets (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    otp_code TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used BOOLEAN DEFAULT FALSE,
+    UNIQUE(user_id) -- Only one active reset request per user
+);
+
+-- SQL for Supabase Edge function to send email
+-- 1. Create a file `supabase/functions/send-email/index.ts`
+-- 2. Add the following content to it:
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { Resend } from "npm:resend@3.4.0";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+serve(async (req) => {
+  try {
+    const { to, subject, body } = await req.json();
+
+    const { data, error } = await resend.emails.send({
+      from: "CineBook <onboarding@resend.dev>",
+      to: [to],
+      subject: subject,
+      html: `<strong>${body}</strong>`,
+    });
+
+    if (error) {
+      return new Response(JSON.stringify(error), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify(data), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+})
+
+-- 3. Add `RESEND_API_KEY` to your project's environment variables in Supabase.
+-- 4. Deploy the function: `supabase functions deploy send-email`
+
 */

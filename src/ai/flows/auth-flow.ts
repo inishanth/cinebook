@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { sendEmail } from '@/lib/db-service';
 
 const saltRounds = 10;
 
@@ -208,54 +209,126 @@ const PasswordResetEmailInputSchema = z.object({
     email: z.string().email(),
 });
 
-const sendPasswordResetEmailFlow = ai.defineFlow({
-    name: 'sendPasswordResetEmailFlow',
+const sendPasswordResetOtpFlow = ai.defineFlow({
+    name: 'sendPasswordResetOtpFlow',
     inputSchema: PasswordResetEmailInputSchema,
     outputSchema: z.void(),
 }, async ({ email }) => {
     const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password`,
-    });
+    
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('email', email)
+        .single();
+    
+    if (userError || !user) {
+        // Don't reveal if the user exists or not, but log it.
+        console.error(`Attempt to reset password for non-existent user: ${email}`);
+        // Return successfully to prevent user enumeration attacks.
+        return;
+    }
 
-    if (error) {
-        // Don't reveal if the user exists or not, but log the error
-        console.error("Password reset error:", error.message);
-        // We can choose to not throw an error to the client to prevent user enumeration.
-        // The UI will show a generic success message regardless.
+    const otp = crypto.randomInt(1000, 9999).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
+
+    const { error: upsertError } = await supabase
+        .from('password_resets')
+        .upsert({
+            user_id: user.user_id,
+            otp_code: otp,
+            expires_at: expiresAt.toISOString(),
+            used: false,
+        }, { onConflict: 'user_id' });
+    
+    if (upsertError) {
+        console.error('Failed to store OTP:', upsertError.message);
+        throw new Error('Could not start password reset process. Please try again.');
+    }
+
+    // Send the email with the OTP
+    try {
+        await sendEmail({
+            to: email,
+            subject: 'Your CineBook Password Reset Code',
+            body: `Your password reset code is: ${otp}. It will expire in 10 minutes.`
+        });
+    } catch (emailError) {
+        console.error('Failed to send OTP email:', emailError);
+        throw new Error('Could not send password reset email. Please try again later.');
     }
 });
 
-export async function sendPasswordResetEmail(data: z.infer<typeof PasswordResetEmailInputSchema>): Promise<void> {
-    await sendPasswordResetEmailFlow(data);
+export async function sendPasswordResetOtp(data: z.infer<typeof PasswordResetEmailInputSchema>): Promise<void> {
+    await sendPasswordResetOtpFlow(data);
 }
 
-const UpdatePasswordInputSchema = z.object({
+
+const ResetPasswordInputSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(4, "OTP must be 4 digits."),
   newPassword: z.string().min(6, "Password must be at least 6 characters."),
-  accessToken: z.string(),
 });
 
-const updatePasswordFlow = ai.defineFlow({
-    name: 'updatePasswordFlow',
-    inputSchema: UpdatePasswordInputSchema,
+
+const resetPasswordWithOtpFlow = ai.defineFlow({
+    name: 'resetPasswordWithOtpFlow',
+    inputSchema: ResetPasswordInputSchema,
     outputSchema: z.void(),
-}, async ({ newPassword, accessToken }) => {
+}, async ({ email, otp, newPassword }) => {
     const supabase = getSupabaseClient();
-    
-    // This uses the temporary session from the password reset link
-    const { data: { user }, error: sessionError } = await supabase.auth.getUser(accessToken);
 
-    if (sessionError || !user) {
-        throw new Error('Invalid or expired token. Please try again.');
+    const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('email', email)
+        .single();
+
+    if (userError || !user) {
+        throw new Error('Invalid email address.');
+    }
+
+    const { data: resetRecord, error: resetError } = await supabase
+        .from('password_resets')
+        .select('*')
+        .eq('user_id', user.user_id)
+        .single();
+
+    if (resetError || !resetRecord) {
+        throw new Error("No password reset request found. Please try again.");
     }
     
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    if (error) {
-        throw new Error(error.message || 'Failed to update password.');
+    if (resetRecord.used) {
+        throw new Error("This reset code has already been used.");
     }
+    
+    if (new Date(resetRecord.expires_at) < new Date()) {
+        throw new Error("This reset code has expired. Please request a new one.");
+    }
+
+    if (resetRecord.otp_code !== otp) {
+        throw new Error("Invalid OTP. Please check your code and try again.");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    const { error: updateError } = await supabase
+        .from('users')
+        .update({ password_hash: hashedPassword })
+        .eq('user_id', user.user_id);
+    
+    if (updateError) {
+        throw new Error('Failed to update password.');
+    }
+
+    // Mark the OTP as used
+    await supabase
+        .from('password_resets')
+        .update({ used: true })
+        .eq('id', resetRecord.id);
 });
 
-export async function updatePassword(data: z.infer<typeof UpdatePasswordInputSchema>): Promise<void> {
-    await updatePasswordFlow(data);
+
+export async function resetPassword(data: z.infer<typeof ResetPasswordInputSchema>): Promise<void> {
+    await resetPasswordWithOtpFlow(data);
 }
