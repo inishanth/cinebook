@@ -114,46 +114,4 @@ CREATE TABLE login_audit_log (
     failure_reason TEXT
 );
 
-
--- INSTRUCTIONS for setting up the email sending function in Supabase:
--- 1. Create a file `supabase/functions/send-email/index.ts`
--- 2. Add the following content to it:
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { Resend } from "npm:resend@3.4.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-serve(async (req) => {
-  try {
-    const { to, subject, body } = await req.json();
-
-    const { data, error } = await resend.emails.send({
-      from: "CineBook <onboarding@resend.dev>",
-      to: [to],
-      subject: subject,
-      html: `<strong>${body}</strong>`,
-    });
-
-    if (error) {
-      return new Response(JSON.stringify(error), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify(data), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-})
-
--- 3. Add `RESEND_API_KEY` to your project's environment variables in Supabase.
--- 4. Deploy the function via the Supabase CLI: `supabase functions deploy send-email`
-
 */

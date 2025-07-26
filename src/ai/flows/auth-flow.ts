@@ -10,7 +10,6 @@ import { createClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { sendEmail } from './email-flow';
 
 const saltRounds = 10;
 
@@ -232,7 +231,6 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
     const otp = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
 
-    // Upsert the new OTP. This will update an existing record or create a new one.
     const { error: upsertError } = await supabase
         .from('password_resets')
         .upsert({
@@ -241,25 +239,17 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
             expires_at: expiresAt.toISOString(),
             used: false,
         }, {
-            onConflict: 'user_id' // Specify the column that has a UNIQUE constraint
+            onConflict: 'user_id'
         });
 
     if (upsertError) {
         console.error('Failed to store OTP:', upsertError.message);
         throw new Error('Could not start password reset process. Please try again.');
     }
+    
+    // TEMPORARY: Log OTP to console instead of sending email for debugging
+    console.log(`Password reset OTP for ${email}: ${otp}`);
 
-    // Send the email with the OTP
-    try {
-        await sendEmail({
-            to: email,
-            subject: 'Your CineBook Password Reset Code',
-            body: `Your password reset code is: ${otp}. It will expire in 10 minutes.`
-        });
-    } catch (emailError) {
-        console.error('Failed to send OTP email:', emailError);
-        throw new Error('Could not send password reset email. Please try again later.');
-    }
 });
 
 export async function sendPasswordResetOtp(data: z.infer<typeof PasswordResetEmailInputSchema>): Promise<void> {
