@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -199,7 +200,7 @@ function UserProfileButton() {
     if (!user) {
         return (
             <Link href="/login">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="hover:bg-accent rounded-full">
                     <User className="h-6 w-6" />
                     <span className="sr-only">Profile</span>
                 </Button>
@@ -210,7 +211,7 @@ function UserProfileButton() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
                     <Avatar>
                         <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                             {user.username.charAt(0).toUpperCase()}
