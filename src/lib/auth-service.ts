@@ -66,10 +66,16 @@ export async function resetPassword(data: {email: string, otp: string, newPasswo
     }
 }
 
-// NOTE: To enable authentication, you must create the following tables in your Supabase project.
+// NOTE: To enable the application, you must create the following tables in your Supabase project.
 // You can do this by navigating to the SQL Editor in your Supabase dashboard and running the SQL commands below.
 /*
--- SQL for 'users' table
+-- #################################################################
+-- ######## FULL DATABASE SCHEMA FOR CINEBOOK APPLICATION ########
+-- #################################################################
+
+-- Step 1: User and Authentication Tables
+-- These tables store user credentials, sessions, and login audit data.
+
 CREATE TABLE users (
   user_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   username TEXT UNIQUE NOT NULL,
@@ -80,7 +86,6 @@ CREATE TABLE users (
   last_login_ip TEXT
 );
 
--- SQL for 'sessions' table
 CREATE TABLE sessions (
     session_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -92,7 +97,6 @@ CREATE TABLE sessions (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- SQL for 'login_audit_log' table
 CREATE TABLE login_audit_log (
     log_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT,
@@ -103,44 +107,83 @@ CREATE TABLE login_audit_log (
     failure_reason TEXT
 );
 
--- This new flow relies on Supabase's built-in auth, which uses the `auth.users` table.
+-- This new flow relies on Supabase's built-in auth for password resets, which uses the `auth.users` table.
 -- The custom tables above are for storing application-specific user data.
 -- Ensure your Supabase project has Auth enabled.
 
 
--- FIX FOR Supabase Query Error:
--- If you are seeing errors in the app related to fetching data from Supabase,
--- you may need to enable read access for your public tables.
--- Navigate to the SQL Editor in your Supabase dashboard and run the following commands:
+-- Step 2: Movie Data Tables
+-- These tables store the core movie information, genres, and cast details.
 
-ALTER TABLE movies REPLICA IDENTITY FULL;
-ALTER TABLE genres REPLICA IDENTITY FULL;
-ALTER TABLE movie_genres REPLICA IDENTITY FULL;
-ALTER TABLE cast_members REPLICA IDENTITY FULL;
-ALTER TABLE movie_cast REPLICA IDENTITY FULL;
+CREATE TABLE movies (
+    id BIGINT PRIMARY KEY,
+    title TEXT NOT NULL,
+    poster_url TEXT,
+    backdrop_path TEXT,
+    overview TEXT,
+    release_date DATE,
+    vote_average REAL,
+    vote_count INTEGER,
+    language TEXT,
+    runtime INTEGER
+);
 
-CREATE POLICY "Enable read access for all users" ON public.movies
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+CREATE TABLE genres (
+    id BIGINT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
 
-CREATE POLICY "Enable read access for all users" ON public.genres
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+CREATE TABLE movie_genres (
+    movie_id BIGINT REFERENCES movies(id) ON DELETE CASCADE,
+    genre_id BIGINT REFERENCES genres(id) ON DELETE CASCADE,
+    PRIMARY KEY (movie_id, genre_id)
+);
 
-CREATE POLICY "Enable read access for all users" ON public.movie_genres
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+CREATE TABLE cast_members (
+    id BIGINT PRIMARY KEY,
+    name TEXT NOT NULL
+);
 
-CREATE POLICY "Enable read access for all users" ON public.cast_members
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+CREATE TABLE movie_cast (
+    movie_id BIGINT REFERENCES movies(id) ON DELETE CASCADE,
+    person_id BIGINT REFERENCES cast_members(id) ON DELETE CASCADE,
+    cast_order INTEGER,
+    PRIMARY KEY (movie_id, person_id)
+);
 
-CREATE POLICY "Enable read access for all users" ON public.movie_cast
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
+
+-- Step 3: (Optional) Row Level Security Policies
+-- If you choose to enable RLS, these policies provide read access to your movie data.
+-- If RLS is disabled, you can skip this step.
+
+-- ALTER TABLE movies REPLICA IDENTITY FULL;
+-- ALTER TABLE genres REPLICA IDENTITY FULL;
+-- ALTER TABLE movie_genres REPLICA IDENTITY FULL;
+-- ALTER TABLE cast_members REPLICA IDENTITY FULL;
+-- ALTER TABLE movie_cast REPLICA IDENTITY FULL;
+
+-- CREATE POLICY "Enable read access for all users" ON public.movies
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
+
+-- CREATE POLICY "Enable read access for all users" ON public.genres
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
+
+-- CREATE POLICY "Enable read access for all users" ON public.movie_genres
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
+
+-- CREATE POLICY "Enable read access for all users" ON public.cast_members
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
+
+-- CREATE POLICY "Enable read access for all users" ON public.movie_cast
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
 */
