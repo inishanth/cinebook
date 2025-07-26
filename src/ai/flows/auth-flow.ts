@@ -25,8 +25,8 @@ function getSupabaseClient() {
 
 const CreateUserInputSchema = z.object({
   email: z.string().email(),
-  username: z.string(),
-  password: z.string(),
+  username: z.string().min(3, "Username must be at least 3 characters."),
+  password: z.string().min(6, "Password must be at least 6 characters."),
 });
 
 const createUserFlow = ai.defineFlow(
@@ -42,8 +42,12 @@ const createUserFlow = ai.defineFlow(
             .from('users')
             .select('id')
             .or(`email.eq.${email},username.eq.${username}`)
-            .single();
+            .maybeSingle();
 
+        if (existingUserError) {
+            throw new Error(existingUserError.message || 'Failed to check for existing user.');
+        }
+        
         if (existingUser) {
             throw new Error('An account with this email or username already exists.');
         }
@@ -94,9 +98,13 @@ const loginUserFlow = ai.defineFlow(
             .from('users')
             .select('id, username, email, password_hash')
             .eq('email', email)
-            .single();
+            .maybeSingle();
 
-        if (userError || !user) {
+        if (userError) {
+             throw new Error(userError.message || 'Failed to retrieve user.');
+        }
+
+        if (!user) {
             throw new Error('Email address does not exist.');
         }
 
