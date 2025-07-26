@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { Search, X, User, LogOut, Bell, BellOff } from 'lucide-react';
+import { Search, X, User, LogOut, Bell, BellOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScroll } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
@@ -15,13 +15,16 @@ import { MovieDetailModal } from '../movie/movie-detail-modal';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
 import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { loginUser, sendPasswordResetOtp } from '@/lib/auth-service';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -167,11 +170,97 @@ function InlineSearchBar() {
   );
 }
 
+function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: boolean) => void, onLoginSuccess: () => void }) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { login } = useAuth();
+  
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const user = await loginUser({ email, password });
+      login(user);
+      toast({ title: 'Signed In!', description: 'Welcome back!' });
+      onLoginSuccess();
+      router.push('/'); 
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      toast({ variant: 'destructive', title: 'Sign In Failed', description: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <DialogContent className="sm:max-w-[425px]">
+      <form onSubmit={handleSignIn}>
+        <CardHeader className="text-center px-0">
+          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardDescription>Sign in to access your watchlist and preferences.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 px-0">
+          <div className="space-y-2">
+            <Label htmlFor="email-dialog">Email</Label>
+            <Input
+              id="email-dialog"
+              type="email"
+              placeholder="Enter your email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password-dialog">Password</Label>
+            <Input
+              id="password-dialog"
+              type="password"
+              placeholder="Enter password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sign In
+          </Button>
+
+          <div className="relative my-2">
+            <Separator />
+            <span className="absolute left-1/2 -translate-x-1/2 top-[-10px] bg-background px-2 text-xs text-muted-foreground">OR</span>
+          </div>
+          
+          <Button variant="outline" className="w-full" asChild onClick={() => onOpenChange(false)}>
+            <Link href="/">Continue as Guest</Link>
+          </Button>
+
+        </CardContent>
+        <CardFooter className="flex-col items-center space-y-2 px-0 pb-0">
+            <div className="text-sm text-center">
+              {"Don't have an account?"} <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">Sign up</Link>
+            </div>
+             <Button variant="link" className="p-0 h-auto text-xs" onClick={() => {
+                onOpenChange(false);
+                router.push('/login#forgot-password');
+             }}>
+                Forgot Password?
+            </Button>
+        </CardFooter>
+      </form>
+    </DialogContent>
+  )
+}
 
 function UserProfileButton() {
     const { user, logout } = useAuth();
     const { toast } = useToast();
     const [notificationPermission, setNotificationPermission] = useState(typeof window !== 'undefined' ? Notification.permission : 'default');
+    const [isLoginOpen, setIsLoginOpen] = React.useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -198,12 +287,15 @@ function UserProfileButton() {
 
     if (!user) {
         return (
-            <Button asChild variant="outline" size="icon" className="rounded-full">
-                <Link href="/login">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Login</span>
-                </Link>
-            </Button>
+            <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-full">
+                        <User className="h-5 w-5" />
+                        <span className="sr-only">Login</span>
+                    </Button>
+                </DialogTrigger>
+                <LoginDialog onOpenChange={setIsLoginOpen} onLoginSuccess={() => setIsLoginOpen(false)} />
+            </Dialog>
         )
     }
     
@@ -258,7 +350,7 @@ export function TopHeader() {
     const { scrollY } = useScroll();
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
-    const isLoginPage = pathname === '/login' || pathname === '/signup';
+    const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/reset-password';
     const { isLoading: isAuthLoading } = useAuth();
 
     useEffect(() => {
@@ -274,13 +366,13 @@ export function TopHeader() {
             scrolled && "shadow-lg shadow-black/30"
             )}>
             <div className="container flex h-16 items-center">
-                <a href="/" className={cn("flex items-center gap-2", isLoginPage ? 'mx-auto' : 'mr-auto')}>
+                <a href="/" className={cn("flex items-center gap-2", isAuthPage ? 'mx-auto' : 'mr-auto')}>
                     <div className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center rounded-md font-bold text-lg">
                         CB
                     </div>
                     <h1 className="text-2xl font-headline text-primary hidden sm:block">CineBook</h1>
                 </a>
-                {!isLoginPage && (
+                {!isAuthPage && (
                     <>
                         <div className="flex-1 flex justify-center px-4">
                             <InlineSearchBar />
