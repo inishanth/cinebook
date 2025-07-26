@@ -199,14 +199,12 @@ function UserProfileButton() {
 
     if (!user) {
         return (
-            <Link href="/login" passHref>
-                <Button asChild variant="ghost" size="icon" className="rounded-full hover:bg-accent">
-                    <a>
-                      <User className="h-6 w-6" />
-                      <span className="sr-only">Profile</span>
-                    </a>
-                </Button>
-            </Link>
+            <Button asChild variant="ghost" size="icon" className="rounded-full hover:bg-accent">
+                <Link href="/login" passHref>
+                    <User className="h-6 w-6" />
+                    <span className="sr-only">Profile</span>
+                </Link>
+            </Button>
         )
     }
     
@@ -298,5 +296,3 @@ export function TopHeader() {
         </header>
     );
 }
-
-    
