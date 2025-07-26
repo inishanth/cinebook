@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '../ui/skeleton';
 import { Calendar } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { getLanguageName } from '@/lib/utils';
 
 function UpcomingMovieItem({ movie }: { movie: Movie }) {
   const posterUrl = movie.poster_url
@@ -68,12 +69,15 @@ export function UpcomingReleases() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const { toast } = useToast();
+  const languageCode = 'ta';
+  const region = 'IN';
+  const languageName = getLanguageName(languageCode);
 
   React.useEffect(() => {
     if (isOpen) {
       setLoading(true);
       setError(null);
-      getUpcomingMovies({ language: 'ta', region: 'IN' })
+      getUpcomingMovies({ language: languageCode, region: region })
         .then(setMovies)
         .catch((err) => {
           const errorMessage = err instanceof Error ? err.message : 'Could not fetch upcoming movies.';
@@ -89,7 +93,7 @@ export function UpcomingReleases() {
         })
         .finally(() => setLoading(false));
     }
-  }, [isOpen, toast]);
+  }, [isOpen, toast, languageCode, region]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -105,7 +109,7 @@ export function UpcomingReleases() {
       <DialogContent className="sm:max-w-[625px] bg-background/90 backdrop-blur-sm">
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline text-primary">
-            Upcoming Tamil Movies (India)
+            Upcoming {languageName} Movies ({region})
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4 -mr-4">

@@ -14,6 +14,7 @@ import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX } from 'lucid
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { getLanguageName } from '@/lib/utils';
 
 
 const movieCategories = [
@@ -282,7 +283,7 @@ export function MovieHomeClient({
                             <SelectItem value="all">All Languages</SelectItem>
                             {initialLanguages.map(lang => (
                                 <SelectItem key={lang} value={lang}>
-                                    {lang.toUpperCase()}
+                                    {getLanguageName(lang)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
