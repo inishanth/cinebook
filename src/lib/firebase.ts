@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApp, getApps } from 'firebase/app';
@@ -37,6 +38,10 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
   if (permission === 'granted') {
     console.log('Notification permission granted.');
+    if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
+      console.error('Firebase VAPID key is not set in environment variables. Push notifications will not work.');
+      return permission;
+    }
     // Get the token
     try {
       const currentToken = await getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY });
