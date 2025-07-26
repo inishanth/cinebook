@@ -45,9 +45,6 @@ export const getMoviesByCategory = async (categoryId: string, page = 0): Promise
         case 'top_rated':
             query = query.order('vote_average', { ascending: false, nullsFirst: false }).gte('vote_count', 10);
             break;
-        case 'upcoming':
-            query = query.order('release_date', { ascending: true }).gte('release_date', new Date().toISOString());
-            break;
         case 'recently_released':
             query = query.order('release_date', { ascending: false }).lte('release_date', new Date().toISOString());
             break;
@@ -137,20 +134,42 @@ export const discoverMovies = async ({
     personId?: string,
 }): Promise<Movie[]> => {
     const supabase = getSupabaseClient();
+    let query;
 
-    let query = supabase.from('movies').select(`
-        *,
-        movie_genres!inner(genre_id),
-        movie_cast!inner(person_id)
-    `);
-
-    if (genreId && genreId !== 'all') {
-        query = query.eq('movie_genres.genre_id', parseInt(genreId));
-    }
-    
     if (personId && personId !== 'all') {
-        query = query.eq('movie_cast.person_id', parseInt(personId));
+        const personQuery = supabase
+            .from('movie_cast')
+            .select(`
+                movies (
+                    *,
+                    movie_genres!inner(genre_id)
+                )
+            `)
+            .eq('person_id', parseInt(personId));
+
+        let moviesQuery = personQuery;
+        
+        let moviesData = (await moviesQuery).data?.map(mc => mc.movies).flat();
+
+        if (genreId && genreId !== 'all') {
+            moviesData = moviesData?.filter(m => m?.movie_genres.some((mg: any) => mg.genre_id === parseInt(genreId)));
+        }
+        
+        // Cannot filter by language and recency on this path currently
+        return (moviesData?.filter(Boolean) as Movie[]) || [];
+
+
+    } else {
+        query = supabase.from('movies').select(`
+            *,
+            movie_genres!inner(genre_id)
+        `);
+         if (genreId && genreId !== 'all') {
+            query = query.eq('movie_genres.genre_id', parseInt(genreId));
+        }
+
     }
+
 
     if (language && language !== 'all') {
         query = query.eq('language', language);
@@ -238,7 +257,6 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
     const apiKey = process.env.TMDB_API_KEY;
     if (!apiKey || apiKey === 'your_tmdb_api_key_here') {
       console.error('TMDB API key is not configured. Please add it to your .env file.');
-      // Return an empty array or throw an error, depending on desired behavior
       return [];
     }
   
@@ -246,10 +264,10 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
     const url = new URL('https://api.themoviedb.org/3/discover/movie');
     const params = {
       api_key: apiKey,
-      with_original_language: language,
+      language: language,
       region: region,
       'release_date.gte': today,
-      sort_by: 'release_date.asc',
+      sort_by: 'primary_release_date.asc',
       page: '1',
     };
     
@@ -264,16 +282,16 @@ export const getUpcomingMovies = async ({ language, region }: { language: string
       }
       const data = await response.json();
       
-      // Map TMDB response to our Movie type
       return data.results.map((tmdbMovie: any) => ({
         id: tmdbMovie.id,
         title: tmdbMovie.title,
-        poster_url: tmdbMovie.poster_path, // Note the property name change
+        poster_url: tmdbMovie.poster_path,
         backdrop_path: tmdbMovie.backdrop_path,
         overview: tmdbMovie.overview,
         release_date: tmdbMovie.release_date,
         vote_average: tmdbMovie.vote_average,
         language: tmdbMovie.original_language,
+        vote_count: tmdbMovie.vote_count,
       }));
     } catch (error) {
       console.error('Error fetching upcoming movies from TMDB:', error);

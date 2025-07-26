@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import type { Movie, Genre, Person } from '@/types';
-import { discoverMovies, getMoviesByCategory } from '@/lib/movie-service';
+import { discoverMovies, getMoviesByCategory, getGenres, getLanguages, getLeadActors } from '@/lib/movie-service';
 import { MovieCategoryRow } from '@/components/movie/movie-category-row';
 import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,18 +65,16 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
 
 export function MovieHomeClient({ 
     initialMoviesByCat,
-    initialGenres,
-    initialLanguages,
-    initialActors,
 }: { 
     initialMoviesByCat: Record<string, Movie[]>,
-    initialGenres: Genre[],
-    initialLanguages: string[],
-    initialActors: Person[],
 }) {
     const [selectedMovie, setSelectedMovie] = React.useState<Movie | null>(null);
     const [moviesByCat, setMoviesByCat] = React.useState<Record<string, Movie[]>>(initialMoviesByCat);
     
+    const [genres, setGenres] = React.useState<Genre[]>([]);
+    const [languages, setLanguages] = React.useState<string[]>([]);
+    const [actors, setActors] = React.useState<Person[]>([]);
+
     const [selectedGenre, setSelectedGenre] = React.useState('all');
     const [selectedLanguage, setSelectedLanguage] = React.useState('all');
     const [selectedRecency, setSelectedRecency] = React.useState('all');
@@ -94,6 +92,25 @@ export function MovieHomeClient({
     const [reloadingCategoryPage, setReloadingCategoryPage] = React.useState(false);
     
     const hasActiveFilters = selectedGenre !== 'all' || selectedLanguage !== 'all' || selectedRecency !== 'all' || selectedActor !== 'all';
+
+     React.useEffect(() => {
+        const fetchFilters = async () => {
+            try {
+                const [fetchedGenres, fetchedLangs, fetchedActors] = await Promise.all([
+                    getGenres(),
+                    getLanguages(),
+                    getLeadActors(),
+                ]);
+                setGenres(fetchedGenres);
+                setLanguages(fetchedLangs);
+                setActors(fetchedActors);
+            } catch (e) {
+                 const errorMessage = e instanceof Error ? e.message : String(e);
+                setError(errorMessage);
+            }
+        };
+        fetchFilters();
+    }, []);
     
     React.useEffect(() => {
         const applyFilters = async () => {
@@ -250,7 +267,7 @@ export function MovieHomeClient({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Genres</SelectItem>
-                            {initialGenres.map(genre => (
+                            {genres.map(genre => (
                                 <SelectItem key={genre.id} value={String(genre.id)}>
                                     {genre.name}
                                 </SelectItem>
@@ -263,7 +280,7 @@ export function MovieHomeClient({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Actors</SelectItem>
-                            {initialActors.map(actor => (
+                            {actors.map(actor => (
                                 <SelectItem key={actor.id} value={String(actor.id)}>
                                     {actor.name}
                                 </SelectItem>
@@ -276,7 +293,7 @@ export function MovieHomeClient({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Languages</SelectItem>
-                            {initialLanguages.map(lang => (
+                            {languages.map(lang => (
                                 <SelectItem key={lang} value={lang}>
                                     {getLanguageName(lang)}
                                 </SelectItem>
@@ -346,5 +363,3 @@ export function MovieHomeClient({
         </>
     );
 }
-
-    
