@@ -229,7 +229,7 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
         return;
     }
 
-    const otp = crypto.randomInt(1000, 9999).toString();
+    const otp = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
 
     // Upsert the new OTP. This will update an existing record or create a new one.
@@ -243,7 +243,6 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
         }, {
             onConflict: 'user_id' // Specify the column that has a UNIQUE constraint
         });
-
 
     if (upsertError) {
         console.error('Failed to store OTP:', upsertError.message);
@@ -270,7 +269,7 @@ export async function sendPasswordResetOtp(data: z.infer<typeof PasswordResetEma
 
 const ResetPasswordInputSchema = z.object({
   email: z.string().email(),
-  otp: z.string().length(4, "OTP must be 4 digits."),
+  otp: z.string().min(1, "OTP must not be empty."),
   newPassword: z.string().min(6, "Password must be at least 6 characters."),
 });
 

@@ -50,7 +50,7 @@ function ResetPasswordDialog({ onEmailSent }: { onEmailSent: (email: string) => 
           <DialogHeader>
               <DialogTitle>Reset Password</DialogTitle>
               <DialogDescription>
-                Enter your email address and we will send you a 4-digit code to reset your password.
+                Enter your email address and we will send you a 6-digit code to reset your password.
               </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleResetRequest}>

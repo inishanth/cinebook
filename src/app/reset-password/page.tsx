@@ -45,8 +45,8 @@ export default function ResetPasswordPage() {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (otp.length !== 4) {
-      setError("OTP must be 4 digits.");
+    if (!/^\d{6}$/.test(otp)) {
+      setError("OTP must be 6 digits.");
       return;
     }
 
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
           <CardDescription>
             {isSuccess 
               ? 'You may now proceed to sign in with your new password.' 
-              : 'Enter the 4-digit code sent to your email and your new password.'
+              : 'Enter the 6-digit code sent to your email and your new password.'
             }
           </CardDescription>
         </CardHeader>
@@ -99,8 +99,8 @@ export default function ResetPasswordPage() {
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter the 4-digit code"
-                  maxLength={4}
+                  placeholder="Enter the 6-digit code"
+                  maxLength={6}
                 />
               </div>
               <div className="space-y-2">
