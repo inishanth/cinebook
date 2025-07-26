@@ -37,6 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (userData: Omit<User, 'password' | 'password_hash'>) => {
     try {
       localStorage.setItem('CineBook-user', JSON.stringify(userData));
+      if (userData.session_token) {
+        localStorage.setItem('CineBook-session-token', userData.session_token);
+      }
       setUser(userData);
     } catch (error) {
       console.error("Failed to save user to localStorage", error);
@@ -46,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     try {
       localStorage.removeItem('CineBook-user');
+      localStorage.removeItem('CineBook-session-token');
       setUser(null);
       toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
       router.push('/login');

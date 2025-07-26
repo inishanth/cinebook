@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
 const saltRounds = 10;
 
@@ -77,12 +78,14 @@ const LoginUserInputSchema = z.object({
     email: z.string().email(),
     password: z.string(),
     ipAddress: z.string().optional(),
+    userAgent: z.string().optional(),
 });
 
 const UserOutputSchema = z.object({
     id: z.number(),
     username: z.string(),
     email: z.string().email(),
+    session_token: z.string(),
 });
 
 const loginUserFlow = ai.defineFlow(
@@ -91,8 +94,18 @@ const loginUserFlow = ai.defineFlow(
         inputSchema: LoginUserInputSchema,
         outputSchema: UserOutputSchema,
     },
-    async ({ email, password, ipAddress }) => {
+    async ({ email, password, ipAddress, userAgent }) => {
         const supabase = getSupabaseClient();
+
+        const logAudit = async (userId: number | null, success: boolean, failure_reason: string | null) => {
+            await supabase.from('login_audit_log').insert({
+                user_id: userId,
+                ip_address: ipAddress,
+                user_agent: userAgent,
+                success,
+                failure_reason,
+            });
+        };
 
         const { data: user, error: userError } = await supabase
             .from('users')
@@ -105,14 +118,20 @@ const loginUserFlow = ai.defineFlow(
         }
 
         if (!user) {
+            await logAudit(null, false, 'Email address does not exist.');
             throw new Error('Email address does not exist.');
         }
 
         const passwordMatches = await bcrypt.compare(password, user.password_hash);
         if (!passwordMatches) {
+            await logAudit(user.user_id, false, 'Incorrect password.');
             throw new Error('Incorrect password.');
         }
 
+        // Log successful login attempt
+        await logAudit(user.user_id, true, null);
+
+        // Update last login time and IP
         const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -123,10 +142,28 @@ const loginUserFlow = ai.defineFlow(
 
         if (updateError) {
             console.error('Failed to update last login time/ip:', updateError.message);
+            // Non-critical error, so we don't throw
+        }
+
+        // Create a session
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        const { error: sessionError } = await supabase.from('sessions').insert({
+            user_id: user.user_id,
+            ip_address: ipAddress,
+            user_agent: userAgent,
+            session_token: sessionToken,
+        });
+
+        if (sessionError) {
+            throw new Error(sessionError.message || 'Failed to create session.');
         }
 
         const { password_hash, ...userData } = user;
-        return { ...userData, id: userData.user_id };
+        return { 
+            ...userData, 
+            id: userData.user_id, 
+            session_token: sessionToken 
+        };
     }
 );
 

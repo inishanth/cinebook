@@ -53,4 +53,5 @@ export interface User {
     password_hash: string; // Hashed password for storage
     last_login_time?: string;
     last_login_ip?: string;
+    session_token?: string;
 }

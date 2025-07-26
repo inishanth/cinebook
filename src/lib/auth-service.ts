@@ -31,11 +31,12 @@ export async function createUser(userData: Required<Pick<User, 'email' | 'userna
     }
 }
 
-export async function loginUser(credentials: Pick<User, 'email' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'>> {
+export async function loginUser(credentials: Pick<User, 'email' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'> & { session_token: string }> {
     try {
         const headersList = headers();
         const ipAddress = headersList.get('x-forwarded-for') || 'unknown';
-        return await loginUserFlow({ ...credentials, ipAddress });
+        const userAgent = headersList.get('user-agent') || 'unknown';
+        return await loginUserFlow({ ...credentials, ipAddress, userAgent });
     } catch (error) {
         throw error;
     }
