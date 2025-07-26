@@ -23,7 +23,7 @@ import { Separator } from '../ui/separator';
 import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { loginUser, createUser } from '@/lib/auth-service';
+import { loginUser, createUser, sendPasswordResetOtp } from '@/lib/auth-service';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -170,7 +170,7 @@ function InlineSearchBar() {
 }
 
 function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: boolean) => void, onAuthSuccess: () => void }) {
-  const [view, setView] = React.useState('login'); // 'login', 'signup'
+  const [view, setView] = React.useState('login'); // 'login', 'signup', 'reset'
   
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -225,9 +225,25 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
     }
   };
   
+   const handleResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await sendPasswordResetOtp(email);
+      toast({ title: 'Check your email', description: 'If an account with that email exists, a password reset link has been sent.' });
+      onAuthSuccess(); // Close the dialog
+    } catch (error) {
+      // The flow is designed to not reveal if an email exists, so we show a generic success-looking message.
+      toast({ title: 'Check your email', description: 'If an account with that email exists, a password reset link has been sent.' });
+      onAuthSuccess(); // Close the dialog
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <DialogContent className="sm:max-w-[425px]">
-       {view === 'login' ? (
+       {view === 'login' && (
          <>
             <DialogHeader className="text-center">
               <DialogTitle className="text-2xl">Welcome Back</DialogTitle>
@@ -242,10 +258,8 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
                 <Label htmlFor="password-dialog">Password</Label>
                 <Input id="password-dialog" type="password" placeholder="Enter password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 <div className="flex justify-end">
-                    <Button variant="link" className="p-0 h-auto text-xs" asChild>
-                        <Link href="/login" onClick={() => onOpenChange(false)}>
-                            Forgot Password?
-                        </Link>
+                    <Button variant="link" className="p-0 h-auto text-xs" onClick={() => setView('reset')}>
+                        Forgot Password?
                     </Button>
                 </div>
               </div>
@@ -263,7 +277,8 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
                 </div>
             </DialogFooter>
          </>
-       ) : (
+       )}
+       {view === 'signup' && (
          <>
             <DialogHeader className="text-center">
               <DialogTitle className="text-2xl">Create an Account</DialogTitle>
@@ -292,6 +307,31 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
                   {'Already have an account?'}{' '}
                   <Button variant="link" className="p-0 h-auto" onClick={() => setView('login')}>
                     Sign In
+                  </Button>
+                </div>
+            </DialogFooter>
+         </>
+       )}
+        {view === 'reset' && (
+         <>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-2xl">Reset Password</DialogTitle>
+              <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleResetRequest} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email-dialog">Email</Label>
+                <Input id="reset-email-dialog" type="email" placeholder="Enter your email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Send Reset Link
+              </Button>
+            </form>
+             <DialogFooter className="pt-4 !justify-center">
+                <div className="text-sm text-center">
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('login')}>
+                    Back to Sign In
                   </Button>
                 </div>
             </DialogFooter>
