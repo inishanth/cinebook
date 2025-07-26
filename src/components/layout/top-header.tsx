@@ -22,9 +22,8 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
 import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { loginUser, sendPasswordResetOtp } from '@/lib/auth-service';
+import { loginUser } from '@/lib/auth-service';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -197,12 +196,11 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
   
   return (
     <DialogContent className="sm:max-w-[425px]">
-      <form onSubmit={handleSignIn}>
-        <CardHeader className="text-center px-0">
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your watchlist and preferences.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 px-0">
+       <DialogHeader className="text-center">
+          <DialogTitle className="text-2xl">Welcome Back</DialogTitle>
+          <DialogDescription>Sign in to access your watchlist and preferences.</DialogDescription>
+        </DialogHeader>
+      <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email-dialog">Email</Label>
             <Input
@@ -230,19 +228,21 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
             Sign In
           </Button>
 
-          <div className="relative my-2">
+          <div className="relative pt-2">
             <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 top-[-10px] bg-background px-2 text-xs text-muted-foreground">OR</span>
+            <span className="absolute left-1/2 -translate-x-1/2 top-[-1px] bg-background px-2 text-xs text-muted-foreground">OR</span>
           </div>
           
           <Button variant="outline" className="w-full" asChild onClick={() => onOpenChange(false)}>
             <Link href="/">Continue as Guest</Link>
           </Button>
-
-        </CardContent>
-        <CardFooter className="flex-col items-center space-y-2 px-0 pb-0">
+      </form>
+       <DialogFooter className="flex-col items-center space-y-2">
             <div className="text-sm text-center">
-              {"Don't have an account?"} <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">Sign up</Link>
+              {"Don't have an account?"}{' '}
+              <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">
+                Sign up
+              </Link>
             </div>
              <Button variant="link" className="p-0 h-auto text-xs" onClick={() => {
                 onOpenChange(false);
@@ -250,8 +250,7 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
              }}>
                 Forgot Password?
             </Button>
-        </CardFooter>
-      </form>
+        </DialogFooter>
     </DialogContent>
   )
 }
@@ -386,3 +385,5 @@ export function TopHeader() {
         </header>
     );
 }
+
+    
