@@ -7,7 +7,6 @@ import { WatchlistProvider } from '@/context/watchlist-context';
 import { AuthProvider } from '@/context/auth-context';
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar';
 import { TopHeader } from '@/components/layout/top-header';
-import { PageTransition } from '@/components/layout/page-transition';
 
 export const metadata: Metadata = {
   title: 'CineBook',
@@ -31,9 +30,7 @@ export default function RootLayout({
           <WatchlistProvider>
             <TopHeader />
             <main className="flex-grow container mx-auto px-4 pt-8 pb-24">
-              <PageTransition>
-                {children}
-              </PageTransition>
+              {children}
             </main>
             <BottomTabBar />
             <Toaster />
