@@ -1,43 +1,33 @@
 
 import { getMoviesByCategory, getGenres, getLanguages, getLeadActors } from '@/lib/movie-service';
-import { MovieHomeClient } from '@/components/movie/movie-home-client';
-import { CategoryRowSkeleton } from '@/components/movie/movie-home-client';
+import { MovieHomeClient, CategoryRowSkeleton } from '@/components/movie/movie-home-client';
+import { movieCategories } from '@/lib/movie-categories';
 import type { Movie, Genre, Person } from '@/types';
 import * as React from 'react';
 import { Suspense } from 'react';
 
-const movieCategories = [
-    { id: 'upcoming', title: 'Upcoming' },
-    { id: 'recently_released', title: 'Recently Released' },
-    { id: 'popular', title: 'Popular' },
-    { id: 'top_rated', title: 'Top Rated' },
-];
-
 async function InitialDataLoader() {
   const moviesByCat: Record<string, Movie[]> = {};
 
+  // Dynamically create promises for each category
+  const moviePromises = movieCategories.map(cat => getMoviesByCategory(cat.id, cat.id === 'popular' ? 0 : undefined));
+
   const [
-    upcoming,
-    recentlyReleased,
-    popular,
-    topRated,
     genres,
     languages,
-    actors
+    actors,
+    ...movieResults
   ] = await Promise.all([
-      getMoviesByCategory('upcoming'),
-      getMoviesByCategory('recently_released'),
-      getMoviesByCategory('popular', 0),
-      getMoviesByCategory('top_rated'),
       getGenres(),
       getLanguages(),
-      getLeadActors()
+      getLeadActors(),
+      ...moviePromises,
   ]);
-
-  moviesByCat['Upcoming'] = upcoming;
-  moviesByCat['Recently Released'] = recentlyReleased;
-  moviesByCat['Popular'] = popular;
-  moviesByCat['Top Rated'] = topRated;
+  
+  // Assign movies to the map based on the category title
+  movieCategories.forEach((cat, index) => {
+    moviesByCat[cat.title] = movieResults[index];
+  });
 
   return <MovieHomeClient 
     initialMoviesByCat={moviesByCat} 

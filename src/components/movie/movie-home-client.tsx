@@ -15,14 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getLanguageName } from '@/lib/utils';
+import { movieCategories } from '@/lib/movie-categories';
 
-
-const movieCategories = [
-    { id: 'upcoming', title: 'Upcoming' },
-    { id: 'recently_released', title: 'Recently Released' },
-    { id: 'popular', title: 'Popular' },
-    { id: 'top_rated', title: 'Top Rated' },
-];
 
 const recencyOptions = [
     { value: 'all', label: 'All Time' },
