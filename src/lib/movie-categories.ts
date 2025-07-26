@@ -5,3 +5,5 @@ export const movieCategories = [
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
 ];
+
+    
