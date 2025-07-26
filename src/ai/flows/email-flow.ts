@@ -37,6 +37,17 @@ const sendEmailFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (email) => {
+    // This flow requires the Resend integration, which is not currently configured.
+    // For now, we will log the email to the console.
+    // In a real application, you would integrate a service like Resend here.
+    console.log('---- Sending Email ----');
+    console.log(`To: ${email.to}`);
+    console.log(`Subject: ${email.subject}`);
+    console.log(`Body: ${email.body}`);
+    console.log('-----------------------');
+    
+    // The code below is for when an email service is integrated.
+    /*
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.functions.invoke('send-email', {
         body: email,
@@ -48,6 +59,7 @@ const sendEmailFlow = ai.defineFlow(
     }
     
     return data;
+    */
   }
 );
 
