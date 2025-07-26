@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createUser as createUserFlow, loginUser as loginUserFlow } from '@/ai/flows/auth-flow';
 import type { User } from '@/types';
+import { headers } from 'next/headers';
 
 let supabase: ReturnType<typeof createClient>;
 
@@ -32,7 +33,9 @@ export async function createUser(userData: Required<Pick<User, 'email' | 'userna
 
 export async function loginUser(credentials: Pick<User, 'email' | 'password'>): Promise<Omit<User, 'password' | 'password_hash'>> {
     try {
-        return await loginUserFlow(credentials);
+        const headersList = headers();
+        const ipAddress = headersList.get('x-forwarded-for') || 'unknown';
+        return await loginUserFlow({ ...credentials, ipAddress });
     } catch (error) {
         throw error;
     }
@@ -43,10 +46,12 @@ export async function loginUser(credentials: Pick<User, 'email' | 'password'>): 
 /*
 -- SQL for 'users' table
 CREATE TABLE users (
-  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   username TEXT UNIQUE NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_login_time TIMESTAMPTZ,
+  last_login_ip TEXT
 );
 */

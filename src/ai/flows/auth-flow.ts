@@ -76,6 +76,7 @@ export async function createUser(userData: Required<Pick<User, 'email' | 'userna
 const LoginUserInputSchema = z.object({
     email: z.string().email(),
     password: z.string(),
+    ipAddress: z.string().optional(),
 });
 
 const UserOutputSchema = z.object({
@@ -90,10 +91,9 @@ const loginUserFlow = ai.defineFlow(
         inputSchema: LoginUserInputSchema,
         outputSchema: UserOutputSchema,
     },
-    async ({ email, password }) => {
+    async ({ email, password, ipAddress }) => {
         const supabase = getSupabaseClient();
 
-        // Step 1: Check if the user exists
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('user_id, username, email, password_hash')
@@ -108,24 +108,23 @@ const loginUserFlow = ai.defineFlow(
             throw new Error('Email address does not exist.');
         }
 
-        // Step 2: If user exists, compare the password
         const passwordMatches = await bcrypt.compare(password, user.password_hash);
         if (!passwordMatches) {
             throw new Error('Incorrect password.');
         }
 
-        // Step 3: Update last login time
         const { error: updateError } = await supabase
             .from('users')
-            .update({ last_login_time: new Date().toISOString() })
+            .update({ 
+                last_login_time: new Date().toISOString(),
+                last_login_ip: ipAddress 
+            })
             .eq('user_id', user.user_id);
 
         if (updateError) {
-            // Log the error but don't block the login process
-            console.error('Failed to update last login time:', updateError.message);
+            console.error('Failed to update last login time/ip:', updateError.message);
         }
 
-        // Return user data, excluding the password hash
         const { password_hash, ...userData } = user;
         return { ...userData, id: userData.user_id };
     }
