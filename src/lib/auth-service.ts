@@ -67,7 +67,8 @@ export async function resetPassword(data: {email: string, otp: string, newPasswo
     }
 }
 
-// NOTE: You would need to create the tables in your Supabase project.
+// NOTE: To enable authentication, you must create the following tables in your Supabase project.
+// You can do this by navigating to the SQL Editor in your Supabase dashboard and running the SQL commands below.
 /*
 -- SQL for 'users' table
 CREATE TABLE users (
@@ -93,7 +94,6 @@ CREATE TABLE sessions (
 );
 
 -- SQL for 'password_resets' table
--- Ensure you have a UNIQUE constraint on the user_id column for the upsert to work correctly.
 CREATE TABLE password_resets (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
@@ -115,7 +115,7 @@ CREATE TABLE login_audit_log (
 );
 
 
--- SQL for Supabase Edge function to send email
+-- INSTRUCTIONS for setting up the email sending function in Supabase:
 -- 1. Create a file `supabase/functions/send-email/index.ts`
 -- 2. Add the following content to it:
 
@@ -154,6 +154,6 @@ serve(async (req) => {
 })
 
 -- 3. Add `RESEND_API_KEY` to your project's environment variables in Supabase.
--- 4. Deploy the function: `supabase functions deploy send-email`
+-- 4. Deploy the function via the Supabase CLI: `supabase functions deploy send-email`
 
 */
