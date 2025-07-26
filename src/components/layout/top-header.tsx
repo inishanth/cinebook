@@ -199,7 +199,7 @@ function UserProfileButton() {
 
     if (!user) {
         return (
-            <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Button asChild variant="ghost" size="icon" className="rounded-full hover:bg-accent">
                 <Link href="/login">
                     <User className="h-5 w-5" />
                     <span className="sr-only">Login</span>
