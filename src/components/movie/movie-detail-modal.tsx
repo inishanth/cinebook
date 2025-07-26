@@ -10,6 +10,7 @@ import { useWatchlist } from '@/context/watchlist-context';
 import { Skeleton } from '../ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Heart, Clock, Tags, X, Star, Film, Users } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const getPosterUrl = (path: string | null) => {
@@ -57,6 +58,7 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   const [details, setDetails] = React.useState<MovieDetails | null>(null);
   const [loading, setLoading] = React.useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     if (isOpen && initialMovie) {
@@ -91,8 +93,10 @@ export function MovieDetailModal({ movie: initialMovie, isOpen, onClose }: Movie
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent
-        side="bottom"
-        className="h-[95vh] bg-background/80 backdrop-blur-sm border-t-2 border-primary p-0 flex flex-col rounded-t-2xl"
+        side={isMobile ? "bottom" : "right"}
+        className="bg-background/80 backdrop-blur-sm p-0 flex flex-col 
+                   md:max-w-md md:border-l-2 md:border-primary 
+                   h-[95vh] md:h-full rounded-t-2xl md:rounded-none"
       >
          <SheetTitle className="sr-only">
             {movieToDisplay ? movieToDisplay.title : 'Movie Details'}
