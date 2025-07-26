@@ -53,7 +53,7 @@ export async function logoutUser(session_token: string): Promise<void> {
 
 export async function sendPasswordResetEmail(email: string): Promise<void> {
     try {
-        await sendPasswordResetEmailFlow(email);
+        await sendPasswordResetEmailFlow({ email });
     } catch (error) {
         throw error;
     }

@@ -13,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function UpdatePasswordPage() {
-  const [password, setPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
   const [confirmPassword, setConfirmPassword] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);
@@ -33,7 +33,14 @@ export default function UpdatePasswordPage() {
         if (token) {
           setAccessToken(token);
         } else {
-            setError('No password reset token found. Please return to the login page and try again.');
+            // This case can happen if the user navigates to the page directly
+            // or if the link is malformed.
+             const errorDescription = params.get('error_description');
+             if(errorDescription) {
+                 setError(errorDescription.replace(/\+/g, ' '));
+             } else if (!params.has('access_token')) {
+                setError('No password reset token found. Please return to the login page and try the "Forgot Password" link again.');
+             }
         }
     }
   }, []);
@@ -43,26 +50,26 @@ export default function UpdatePasswordPage() {
     e.preventDefault();
     setError(null);
 
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-    if (password.length < 6) {
+    if (newPassword.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
     if (!accessToken) {
-        setError("Missing access token. Please try the reset process again.");
+        setError("Missing access token. Please try the reset process again from the email link.");
         return;
     }
 
     setIsLoading(true);
     try {
-      await updatePassword(password, accessToken);
+      await updatePassword(newPassword, accessToken);
       toast({ title: 'Success!', description: 'Your password has been updated. You can now sign in.' });
       setIsSuccess(true);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -77,7 +84,10 @@ export default function UpdatePasswordPage() {
             {isSuccess ? 'Password Updated!' : 'Update Your Password'}
           </CardTitle>
           <CardDescription>
-            {isSuccess ? 'You may now proceed to sign in.' : 'Enter a new password for your account.'}
+            {isSuccess 
+              ? 'You may now proceed to sign in.' 
+              : 'Enter a new password for your account.'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -89,9 +99,10 @@ export default function UpdatePasswordPage() {
                   id="password"
                   type="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter your new password"
+                  disabled={!accessToken}
                 />
               </div>
               <div className="space-y-2">
@@ -103,6 +114,7 @@ export default function UpdatePasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your new password"
+                   disabled={!accessToken}
                 />
               </div>
               {error && (

@@ -226,8 +226,8 @@ const sendPasswordResetEmailFlow = ai.defineFlow({
     }
 });
 
-export async function sendPasswordResetEmail(email: string): Promise<void> {
-    await sendPasswordResetEmailFlow({ email });
+export async function sendPasswordResetEmail(data: z.infer<typeof PasswordResetEmailInputSchema>): Promise<void> {
+    await sendPasswordResetEmailFlow(data);
 }
 
 const UpdatePasswordInputSchema = z.object({
