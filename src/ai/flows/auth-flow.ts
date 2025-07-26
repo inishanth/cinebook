@@ -170,3 +170,35 @@ const loginUserFlow = ai.defineFlow(
 export async function loginUser(credentials: z.infer<typeof LoginUserInputSchema>): Promise<z.infer<typeof UserOutputSchema>> {
     return await loginUserFlow(credentials);
 }
+
+const LogoutUserInputSchema = z.object({
+  session_token: z.string(),
+});
+
+const logoutUserFlow = ai.defineFlow(
+  {
+    name: 'logoutUserFlow',
+    inputSchema: LogoutUserInputSchema,
+    outputSchema: z.void(),
+  },
+  async ({ session_token }) => {
+    const supabase = getSupabaseClient();
+
+    const { error } = await supabase
+      .from('sessions')
+      .update({
+        logout_time: new Date().toISOString(),
+        is_active: false,
+      })
+      .eq('session_token', session_token);
+    
+    if (error) {
+        console.error('Failed to update session on logout', error.message);
+        // Do not throw an error to the client, as logout should always succeed on the client-side.
+    }
+  }
+);
+
+export async function logoutUser(data: z.infer<typeof LogoutUserInputSchema>): Promise<void> {
+    await logoutUserFlow(data);
+}

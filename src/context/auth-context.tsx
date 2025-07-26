@@ -5,6 +5,7 @@ import * as React from 'react';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { logoutUser } from '@/lib/auth-service';
 
 interface AuthContextType {
   user: Omit<User, 'password' | 'password_hash'> | null;
@@ -46,15 +47,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     try {
+      const sessionToken = localStorage.getItem('CineBook-session-token');
+      if (sessionToken) {
+        await logoutUser(sessionToken);
+      }
+      
       localStorage.removeItem('CineBook-user');
       localStorage.removeItem('CineBook-session-token');
       setUser(null);
       toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
       router.push('/login');
     } catch (error) {
-      console.error("Failed to remove user from localStorage", error);
+      console.error("Failed to logout", error);
+      // Still clear local data even if server call fails
+      localStorage.removeItem('CineBook-user');
+      localStorage.removeItem('CineBook-session-token');
+      setUser(null);
+      router.push('/login');
     }
   };
 

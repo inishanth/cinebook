@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
-import { createUser as createUserFlow, loginUser as loginUserFlow } from '@/ai/flows/auth-flow';
+import { createUser as createUserFlow, loginUser as loginUserFlow, logoutUser as logoutUserFlow } from '@/ai/flows/auth-flow';
 import type { User } from '@/types';
 import { headers } from 'next/headers';
 
@@ -42,6 +42,14 @@ export async function loginUser(credentials: Pick<User, 'email' | 'password'>): 
     }
 }
 
+export async function logoutUser(session_token: string): Promise<void> {
+    try {
+        await logoutUserFlow({ session_token });
+    } catch (error) {
+        // Log the error but don't re-throw, as client-side logout should proceed regardless
+        console.error('Failed to update session on server during logout:', error);
+    }
+}
 
 // NOTE: You would need to create the 'users' table in your Supabase project.
 /*
