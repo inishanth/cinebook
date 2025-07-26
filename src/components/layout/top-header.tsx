@@ -244,14 +244,14 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
             <Link href="/">Continue as Guest</Link>
           </Button>
       </form>
-       <DialogFooter className="flex-col items-center space-y-2 pt-4">
-            <div className="text-sm text-center">
-              {"Don't have an account?"}{' '}
-              <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">
-                Sign up
-              </Link>
-            </div>
-        </DialogFooter>
+       <DialogFooter className="pt-4 !justify-center">
+          <div className="text-sm text-center">
+            {"Don't have an account?"}{' '}
+            <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">
+              Sign up
+            </Link>
+          </div>
+      </DialogFooter>
     </DialogContent>
   )
 }
