@@ -107,4 +107,40 @@ CREATE TABLE login_audit_log (
 -- The custom tables above are for storing application-specific user data.
 -- Ensure your Supabase project has Auth enabled.
 
+
+-- FIX FOR Supabase Query Error:
+-- If you are seeing errors in the app related to fetching data from Supabase,
+-- you may need to enable read access for your public tables.
+-- Navigate to the SQL Editor in your Supabase dashboard and run the following commands:
+
+ALTER TABLE movies REPLICA IDENTITY FULL;
+ALTER TABLE genres REPLICA IDENTITY FULL;
+ALTER TABLE movie_genres REPLICA IDENTITY FULL;
+ALTER TABLE cast_members REPLICA IDENTITY FULL;
+ALTER TABLE movie_cast REPLICA IDENTITY FULL;
+
+CREATE POLICY "Enable read access for all users" ON public.movies
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Enable read access for all users" ON public.genres
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Enable read access for all users" ON public.movie_genres
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Enable read access for all users" ON public.cast_members
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+
+CREATE POLICY "Enable read access for all users" ON public.movie_cast
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
 */
