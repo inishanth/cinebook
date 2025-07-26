@@ -23,7 +23,7 @@ import { Separator } from '../ui/separator';
 import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { loginUser } from '@/lib/auth-service';
+import { loginUser, createUser } from '@/lib/auth-service';
 
 function SearchResults({ results, loading, onMovieClick }: { results: Movie[], loading: boolean, onMovieClick: (movie: Movie) => void }) {
     if (loading) {
@@ -169,10 +169,14 @@ function InlineSearchBar() {
   );
 }
 
-function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: boolean) => void, onLoginSuccess: () => void }) {
+function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: boolean) => void, onAuthSuccess: () => void }) {
+  const [view, setView] = React.useState('login'); // 'login', 'signup'
+  
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [username, setUsername] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  
   const router = useRouter();
   const { toast } = useToast();
   const { login } = useAuth();
@@ -184,7 +188,7 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
       const user = await loginUser({ email, password });
       login(user);
       toast({ title: 'Signed In!', description: 'Welcome back!' });
-      onLoginSuccess();
+      onAuthSuccess();
       router.push('/'); 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -193,65 +197,106 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
       setIsLoading(false);
     }
   };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    if (username.length < 3) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Username must be at least 3 characters.' });
+      setIsLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Password must be at least 6 characters.' });
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+      await createUser({ email, username, password });
+      toast({ title: 'Account Created!', description: 'You can now sign in with your new account.' });
+      setView('login'); // Switch to login view on success
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      toast({ variant: 'destructive', title: 'Sign Up Failed', description: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <DialogContent className="sm:max-w-[425px]">
-       <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl">Welcome Back</DialogTitle>
-          <DialogDescription>Sign in to access your watchlist and preferences.</DialogDescription>
-        </DialogHeader>
-      <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email-dialog">Email</Label>
-            <Input
-              id="email-dialog"
-              type="email"
-              placeholder="Enter your email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password-dialog">Password</Label>
-            <Input
-              id="password-dialog"
-              type="password"
-              placeholder="Enter password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-             <div className="flex justify-end">
-                <Button variant="link" className="p-0 h-auto text-xs" asChild>
-                    <Link href="/login#forgot-password" onClick={() => onOpenChange(false)}>
-                        Forgot Password?
-                    </Link>
+       {view === 'login' ? (
+         <>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-2xl">Welcome Back</DialogTitle>
+              <DialogDescription>Sign in to access your watchlist and preferences.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email-dialog">Email</Label>
+                <Input id="email-dialog" type="email" placeholder="Enter your email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password-dialog">Password</Label>
+                <Input id="password-dialog" type="password" placeholder="Enter password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                <div className="flex justify-end">
+                    <Button variant="link" className="p-0 h-auto text-xs" asChild>
+                        <Link href="/login#forgot-password" onClick={() => onOpenChange(false)}>
+                            Forgot Password?
+                        </Link>
+                    </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+            </form>
+             <DialogFooter className="pt-4 !justify-center">
+                <div className="text-sm text-center">
+                  {"Don't have an account?"}{' '}
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('signup')}>
+                    Sign up
+                  </Button>
+                </div>
+            </DialogFooter>
+         </>
+       ) : (
+         <>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-2xl">Create an Account</DialogTitle>
+              <DialogDescription>Enter your details to get started.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSignUp} className="space-y-4">
+               <div className="space-y-2">
+                  <Label htmlFor="email-signup">Email</Label>
+                  <Input id="email-signup" type="email" placeholder="Enter your email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username-signup">Username</Label>
+                  <Input id="username-signup" type="text" placeholder="Choose a username" required value={username} onChange={(e) => setUsername(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-signup">Password</Label>
+                  <Input id="password-signup" type="password" placeholder="Create a password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Account
                 </Button>
-            </div>
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In
-          </Button>
-
-          <div className="relative pt-2">
-            <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 top-[-1px] bg-background px-2 text-xs text-muted-foreground">OR</span>
-          </div>
-          
-          <Button variant="outline" className="w-full" asChild onClick={() => onOpenChange(false)}>
-            <Link href="/">Continue as Guest</Link>
-          </Button>
-      </form>
-       <DialogFooter className="pt-4 !justify-center">
-          <div className="text-sm text-center">
-            {"Don't have an account?"}{' '}
-            <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">
-              Sign up
-            </Link>
-          </div>
-      </DialogFooter>
+            </form>
+            <DialogFooter className="pt-4 !justify-center">
+                <div className="text-sm text-center">
+                  {'Already have an account?'}{' '}
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('login')}>
+                    Sign In
+                  </Button>
+                </div>
+            </DialogFooter>
+         </>
+       )}
     </DialogContent>
   )
 }
@@ -260,7 +305,7 @@ function UserProfileButton() {
     const { user, logout } = useAuth();
     const { toast } = useToast();
     const [notificationPermission, setNotificationPermission] = useState(typeof window !== 'undefined' ? Notification.permission : 'default');
-    const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+    const [isAuthOpen, setIsAuthOpen] = React.useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -287,14 +332,14 @@ function UserProfileButton() {
 
     if (!user) {
         return (
-            <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+            <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
                 <DialogTrigger asChild>
                     <Button variant="outline" size="icon" className="rounded-full">
                         <User className="h-5 w-5" />
-                        <span className="sr-only">Login</span>
+                        <span className="sr-only">Login or Sign Up</span>
                     </Button>
                 </DialogTrigger>
-                <LoginDialog onOpenChange={setIsLoginOpen} onLoginSuccess={() => setIsLoginOpen(false)} />
+                <AuthDialog onOpenChange={setIsAuthOpen} onAuthSuccess={() => setIsAuthOpen(false)} />
             </Dialog>
         )
     }
@@ -386,7 +431,3 @@ export function TopHeader() {
         </header>
     );
 }
-
-    
-
-    
