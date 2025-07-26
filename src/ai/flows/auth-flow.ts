@@ -8,7 +8,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
+import bcrypt from 'bcrypt';
 
+const saltRounds = 10;
 
 let supabase: ReturnType<typeof createClient>;
 function getSupabaseClient() {
@@ -46,12 +48,14 @@ const createUserFlow = ai.defineFlow(
             throw new Error('An account with this email or username already exists.');
         }
 
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
         const { error } = await supabase
             .from('users')
             .insert({
                 email,
                 username,
-                password_hash: password, // Storing plain text password
+                password_hash: hashedPassword,
             });
         
         if (error) {
@@ -60,7 +64,7 @@ const createUserFlow = ai.defineFlow(
     }
 );
 
-export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): Promise<void> {
+export async function createUser(userData: Required<Pick<User, 'email' | 'username' | 'password'>>): Promise<void> {
     await createUserFlow(userData);
 }
 
@@ -97,7 +101,8 @@ const loginUserFlow = ai.defineFlow(
         }
 
         // Step 2: If user exists, compare the password
-        if (user.password_hash !== password) {
+        const passwordMatches = await bcrypt.compare(password, user.password_hash);
+        if (!passwordMatches) {
             throw new Error('Incorrect password.');
         }
 

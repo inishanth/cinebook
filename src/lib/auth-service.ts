@@ -20,7 +20,7 @@ function getSupabaseClient() {
   return supabase;
 }
 
-export async function createUser(userData: Omit<User, 'id' | 'password_hash'>): Promise<void> {
+export async function createUser(userData: Required<Pick<User, 'email' | 'username' | 'password'>>): Promise<void> {
     try {
         await createUserFlow(userData);
     } catch (error) {

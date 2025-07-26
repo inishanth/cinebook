@@ -48,6 +48,6 @@ export interface User {
     id: number;
     email: string;
     username: string;
-    password?: string;
-    password_hash?: string;
+    password?: string; // Plain text, only used for creation
+    password_hash: string; // Hashed password for storage
 }
