@@ -25,12 +25,12 @@ export function MovieCategoryRow({ title, movies, onMovieClick, onRefresh, isLoa
             </Button>
         )}
       </div>
-      <div className="flex overflow-x-auto space-x-4 -m-2 p-2 hide-scrollbar scroll-smooth snap-x snap-mandatory">
+      <div className="flex overflow-x-auto space-x-3 sm:space-x-4 -m-2 p-2 hide-scrollbar scroll-smooth snap-x snap-mandatory">
         {isLoading
             ? [...Array(10)].map((_, i) => (
                 <div key={i} className="snap-start flex-shrink-0">
-                    <div className="flex-shrink-0 w-28 sm:w-36 group">
-                        <Skeleton className="w-full h-[168px] sm:h-[216px] rounded-lg" />
+                    <div className="flex-shrink-0 w-24 sm:w-32 group">
+                        <Skeleton className="w-full h-[144px] sm:h-[192px] rounded-lg" />
                         <div className="mt-2 space-y-2">
                             <Skeleton className="h-4 w-3/4" />
                         </div>

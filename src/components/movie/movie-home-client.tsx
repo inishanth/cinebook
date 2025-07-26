@@ -33,10 +33,10 @@ export function CategoryRowSkeleton() {
     return (
         <div className="space-y-4">
             <Skeleton className="h-7 w-48" />
-            <div className="flex space-x-4">
+            <div className="flex space-x-3 sm:space-x-4">
                 {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex-shrink-0 w-28 sm:w-36 group">
-                         <Skeleton className="w-full h-[168px] sm:h-[216px] rounded-lg" />
+                    <div key={i} className="flex-shrink-0 w-24 sm:w-32 group">
+                         <Skeleton className="w-full h-[144px] sm:h-[192px] rounded-lg" />
                          <div className="mt-2 space-y-2">
                              <Skeleton className="h-4 w-3/4" />
                          </div>
@@ -375,8 +375,8 @@ export function MovieHomeClient({
                 loadingFilteredMovies ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {[...Array(12)].map((_, i) => (
-                           <div key={i} className="flex-shrink-0 w-28 sm:w-36 group">
-                                <Skeleton className="w-full h-[168px] sm:h-[216px] rounded-lg" />
+                           <div key={i} className="flex-shrink-0 w-24 sm:w-32 group">
+                                <Skeleton className="w-full h-[144px] sm:h-[192px] rounded-lg" />
                                 <div className="mt-2 space-y-2">
                                     <Skeleton className="h-4 w-3/4" />
                                 </div>
@@ -398,7 +398,7 @@ export function MovieHomeClient({
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="flex flex-col space-y-12"
+                    className="flex flex-col space-y-8 sm:space-y-12"
                 >
                     <>
                         {movieCategories.map((cat) => (
