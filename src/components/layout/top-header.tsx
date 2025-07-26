@@ -222,6 +222,14 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+             <div className="flex justify-end">
+                <Button variant="link" className="p-0 h-auto text-xs" onClick={() => {
+                    onOpenChange(false);
+                    router.push('/login#forgot-password');
+                }}>
+                    Forgot Password?
+                </Button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -237,19 +245,13 @@ function LoginDialog({ onOpenChange, onLoginSuccess }: { onOpenChange: (open: bo
             <Link href="/">Continue as Guest</Link>
           </Button>
       </form>
-       <DialogFooter className="flex-col items-center space-y-2">
+       <DialogFooter className="flex-col items-center space-y-2 pt-4">
             <div className="text-sm text-center">
               {"Don't have an account?"}{' '}
               <Link href="/signup" onClick={() => onOpenChange(false)} className="underline">
                 Sign up
               </Link>
             </div>
-             <Button variant="link" className="p-0 h-auto text-xs" onClick={() => {
-                onOpenChange(false);
-                router.push('/login#forgot-password');
-             }}>
-                Forgot Password?
-            </Button>
         </DialogFooter>
     </DialogContent>
   )
@@ -385,5 +387,7 @@ export function TopHeader() {
         </header>
     );
 }
+
+    
 
     
