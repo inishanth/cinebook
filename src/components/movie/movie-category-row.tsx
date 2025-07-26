@@ -28,8 +28,8 @@ export function MovieCategoryRow({ title, movies, onMovieClick, onRefresh, isLoa
         {isLoading
             ? [...Array(10)].map((_, i) => (
                 <div key={i} className="snap-start flex-shrink-0">
-                    <div className="flex-shrink-0 w-40 group">
-                        <Skeleton className="w-full h-60 rounded-lg" />
+                    <div className="flex-shrink-0 w-32 group">
+                        <Skeleton className="w-full h-48 rounded-lg" />
                         <div className="mt-2 space-y-2">
                             <Skeleton className="h-4 w-3/4" />
                         </div>
