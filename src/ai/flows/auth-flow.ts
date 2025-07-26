@@ -6,7 +6,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { User } from '@/types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -128,10 +128,8 @@ const loginUserFlow = ai.defineFlow(
             throw new Error('Incorrect password.');
         }
 
-        // Log successful login attempt
         await logAudit(user.user_id, true, null);
 
-        // Update last login time and IP
         const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -142,10 +140,8 @@ const loginUserFlow = ai.defineFlow(
 
         if (updateError) {
             console.error('Failed to update last login time/ip:', updateError.message);
-            // Non-critical error, so we don't throw
         }
 
-        // Create a session
         const sessionToken = crypto.randomBytes(32).toString('hex');
         const { error: sessionError } = await supabase.from('sessions').insert({
             user_id: user.user_id,
@@ -194,7 +190,6 @@ const logoutUserFlow = ai.defineFlow(
     
     if (error) {
         console.error('Failed to update session on logout', error.message);
-        // Do not throw an error to the client, as logout should always succeed on the client-side.
     }
   }
 );
@@ -203,6 +198,7 @@ export async function logoutUser(data: z.infer<typeof LogoutUserInputSchema>): P
     await logoutUserFlow(data);
 }
 
+// New Password Reset Flows using Supabase Auth
 
 const PasswordResetEmailInputSchema = z.object({
     email: z.string().email(),
@@ -215,54 +211,27 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
 }, async ({ email }) => {
     const supabase = getSupabaseClient();
     
-    const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('email', email)
-        .single();
-    
-    if (userError || !user) {
-        // Don't reveal if the user exists or not, but log it.
-        console.error(`Attempt to reset password for non-existent user: ${email}`);
-        // Return successfully to prevent user enumeration attacks.
-        return;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: process.env.NEXT_PUBLIC_SITE_URL, // Not used by us, but required by Supabase
+    });
+
+    if (error) {
+        console.error('Supabase password reset error:', error.message);
+        // Do not throw the raw error to prevent leaking user existence info.
+        // A generic error will be handled by the client.
+        throw new Error('Could not start password reset process.');
     }
-
-    const otp = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
-
-    const { error: upsertError } = await supabase
-        .from('password_resets')
-        .upsert({
-            user_id: user.user_id,
-            otp_code: otp,
-            expires_at: expiresAt.toISOString(),
-            used: false,
-        }, {
-            onConflict: 'user_id'
-        });
-
-    if (upsertError) {
-        console.error('Failed to store OTP:', upsertError.message);
-        throw new Error('Could not start password reset process. Please try again.');
-    }
-    
-    // TEMPORARY: Log OTP to console instead of sending email for debugging
-    console.log(`Password reset OTP for ${email}: ${otp}`);
-
 });
 
 export async function sendPasswordResetOtp(data: z.infer<typeof PasswordResetEmailInputSchema>): Promise<void> {
     await sendPasswordResetOtpFlow(data);
 }
 
-
 const ResetPasswordInputSchema = z.object({
   email: z.string().email(),
   otp: z.string().min(1, "OTP must not be empty."),
   newPassword: z.string().min(6, "Password must be at least 6 characters."),
 });
-
 
 const resetPasswordWithOtpFlow = ai.defineFlow({
     name: 'resetPasswordWithOtpFlow',
@@ -271,54 +240,42 @@ const resetPasswordWithOtpFlow = ai.defineFlow({
 }, async ({ email, otp, newPassword }) => {
     const supabase = getSupabaseClient();
 
-    const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('email', email)
-        .single();
+    // 1. Verify the OTP
+    const { data: { session }, error: otpError } = await supabase.auth.verifyOtp({
+      email: email,
+      token: otp,
+      type: 'email',
+    });
 
-    if (userError || !user) {
-        throw new Error('Invalid email address.');
+    if (otpError) {
+      console.error('Supabase OTP verification error:', otpError.message);
+      throw new Error("Invalid or expired OTP. Please try again.");
     }
 
-    const { data: resetRecord, error: resetError } = await supabase
-        .from('password_resets')
-        .select('*')
-        .eq('user_id', user.user_id)
-        .single();
-
-    if (resetError || !resetRecord) {
-        throw new Error("No password reset request found. Please try again.");
+    if (!session || !session.user) {
+        throw new Error("Could not verify user. The session is invalid.");
     }
     
-    if (resetRecord.used) {
-        throw new Error("This reset code has already been used.");
+    // We need a service role client to bypass RLS and update a user's password hash directly in our custom table.
+    // The regular client authenticated with the session cannot do this.
+     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Supabase service role key not found.');
     }
+    const supabaseAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     
-    if (new Date(resetRecord.expires_at) < new Date()) {
-        throw new Error("This reset code has expired. Please request a new one.");
-    }
-
-    if (resetRecord.otp_code !== otp) {
-        throw new Error("Invalid OTP. Please check your code and try again.");
-    }
-
+    // 2. Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    const { error: updateError } = await supabase
+    // 3. Update the password in our custom 'users' table
+    const { error: updateError } = await supabaseAdmin
         .from('users')
         .update({ password_hash: hashedPassword })
-        .eq('user_id', user.user_id);
+        .eq('email', email);
     
     if (updateError) {
+        console.error("Failed to update password in custom table:", updateError.message);
         throw new Error('Failed to update password.');
     }
-
-    // Mark the OTP as used
-    await supabase
-        .from('password_resets')
-        .update({ used: true })
-        .eq('id', resetRecord.id);
 });
 
 
