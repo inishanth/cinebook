@@ -93,14 +93,14 @@ CREATE TABLE sessions (
 );
 
 -- SQL for 'password_resets' table
+-- Ensure you have a UNIQUE constraint on the user_id column for the upsert to work correctly.
 CREATE TABLE password_resets (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     otp_code TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    used BOOLEAN DEFAULT FALSE,
-    UNIQUE(user_id) -- Only one active reset request per user
+    used BOOLEAN DEFAULT FALSE
 );
 
 -- SQL for 'login_audit_log' table

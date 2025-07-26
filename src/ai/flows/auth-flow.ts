@@ -232,29 +232,21 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
     const otp = crypto.randomInt(1000, 9999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
 
-    // Delete any previous OTPs for this user to ensure a clean slate.
-    const { error: deleteError } = await supabase
-      .from('password_resets')
-      .delete()
-      .eq('user_id', user.user_id);
-    
-    if (deleteError) {
-        console.error('Failed to delete old OTP:', deleteError.message);
-        // This is not a critical failure, so we can continue.
-    }
-
-    // Insert the new OTP
-    const { error: insertError } = await supabase
+    // Upsert the new OTP. This will update an existing record or create a new one.
+    const { error: upsertError } = await supabase
         .from('password_resets')
-        .insert({
+        .upsert({
             user_id: user.user_id,
             otp_code: otp,
             expires_at: expiresAt.toISOString(),
             used: false,
+        }, {
+            onConflict: 'user_id' // Specify the column that has a UNIQUE constraint
         });
 
-    if (insertError) {
-        console.error('Failed to store OTP:', insertError.message);
+
+    if (upsertError) {
+        console.error('Failed to store OTP:', upsertError.message);
         throw new Error('Could not start password reset process. Please try again.');
     }
 
@@ -344,5 +336,3 @@ const resetPasswordWithOtpFlow = ai.defineFlow({
 export async function resetPassword(data: z.infer<typeof ResetPasswordInputSchema>): Promise<void> {
     await resetPasswordWithOtpFlow(data);
 }
-
-    
