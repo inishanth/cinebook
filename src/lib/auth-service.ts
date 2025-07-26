@@ -80,6 +80,18 @@ CREATE TABLE users (
   last_login_ip TEXT
 );
 
+-- SQL for 'sessions' table
+CREATE TABLE sessions (
+    session_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    session_token TEXT UNIQUE NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    logout_time TIMESTAMPTZ,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
 -- SQL for 'password_resets' table
 CREATE TABLE password_resets (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -90,6 +102,18 @@ CREATE TABLE password_resets (
     used BOOLEAN DEFAULT FALSE,
     UNIQUE(user_id) -- Only one active reset request per user
 );
+
+-- SQL for 'login_audit_log' table
+CREATE TABLE login_audit_log (
+    log_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    user_id BIGINT,
+    ip_address TEXT,
+    user_agent TEXT,
+    login_time TIMESTAMPTZ DEFAULT NOW(),
+    success BOOLEAN NOT NULL,
+    failure_reason TEXT
+);
+
 
 -- SQL for Supabase Edge function to send email
 -- 1. Create a file `supabase/functions/send-email/index.ts`
