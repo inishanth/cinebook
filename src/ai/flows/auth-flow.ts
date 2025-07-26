@@ -40,7 +40,7 @@ const createUserFlow = ai.defineFlow(
         
         const { data: existingUser, error: existingUserError } = await supabase
             .from('users')
-            .select('id')
+            .select('user_id')
             .or(`email.eq.${email},username.eq.${username}`)
             .maybeSingle();
 
@@ -96,7 +96,7 @@ const loginUserFlow = ai.defineFlow(
         // Step 1: Check if the user exists
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('id, username, email, password_hash')
+            .select('user_id, username, email, password_hash')
             .eq('email', email)
             .maybeSingle();
 
@@ -116,7 +116,7 @@ const loginUserFlow = ai.defineFlow(
 
         // Return user data, excluding the password hash
         const { password_hash, ...userData } = user;
-        return userData;
+        return { ...userData, id: userData.user_id };
     }
 );
 

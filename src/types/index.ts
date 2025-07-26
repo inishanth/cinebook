@@ -45,7 +45,8 @@ export interface MovieDetails extends Movie {
 }
 
 export interface User {
-    id: number;
+    id: number; // This will correspond to user_id from the database
+    user_id?: number;
     email: string;
     username: string;
     password?: string; // Plain text, only used for creation
