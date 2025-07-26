@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
-import { createUser as createUserFlow, loginUser as loginUserFlow, logoutUser as logoutUserFlow } from '@/ai/flows/auth-flow';
+import { createUser as createUserFlow, loginUser as loginUserFlow, logoutUser as logoutUserFlow, sendPasswordResetEmail as sendPasswordResetEmailFlow, updatePassword as updatePasswordFlow } from '@/ai/flows/auth-flow';
 import type { User } from '@/types';
 import { headers } from 'next/headers';
 
@@ -48,6 +48,22 @@ export async function logoutUser(session_token: string): Promise<void> {
     } catch (error) {
         // Log the error but don't re-throw, as client-side logout should proceed regardless
         console.error('Failed to update session on server during logout:', error);
+    }
+}
+
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+    try {
+        await sendPasswordResetEmailFlow(email);
+    } catch (error) {
+        throw error;
+    }
+}
+
+export async function updatePassword(newPassword: string, accessToken: string): Promise<void> {
+    try {
+        await updatePasswordFlow({ newPassword, accessToken });
+    } catch (error) {
+        throw error;
     }
 }
 

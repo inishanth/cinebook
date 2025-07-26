@@ -202,3 +202,60 @@ const logoutUserFlow = ai.defineFlow(
 export async function logoutUser(data: z.infer<typeof LogoutUserInputSchema>): Promise<void> {
     await logoutUserFlow(data);
 }
+
+
+const PasswordResetEmailInputSchema = z.object({
+    email: z.string().email(),
+});
+
+const sendPasswordResetEmailFlow = ai.defineFlow({
+    name: 'sendPasswordResetEmailFlow',
+    inputSchema: PasswordResetEmailInputSchema,
+    outputSchema: z.void(),
+}, async ({ email }) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/update-password`,
+    });
+
+    if (error) {
+        // Don't reveal if the user exists or not, but log the error
+        console.error("Password reset error:", error.message);
+        // We can choose to not throw an error to the client to prevent user enumeration.
+        // The UI will show a generic success message regardless.
+    }
+});
+
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+    await sendPasswordResetEmailFlow({ email });
+}
+
+const UpdatePasswordInputSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters."),
+  accessToken: z.string(),
+});
+
+const updatePasswordFlow = ai.defineFlow({
+    name: 'updatePasswordFlow',
+    inputSchema: UpdatePasswordInputSchema,
+    outputSchema: z.void(),
+}, async ({ newPassword, accessToken }) => {
+    const supabase = getSupabaseClient();
+    
+    // This uses the temporary session from the password reset link
+    const { data: { user }, error: sessionError } = await supabase.auth.getUser(accessToken);
+
+    if (sessionError || !user) {
+        throw new Error('Invalid or expired token. Please try again.');
+    }
+    
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+        throw new Error(error.message || 'Failed to update password.');
+    }
+});
+
+export async function updatePassword(data: z.infer<typeof UpdatePasswordInputSchema>): Promise<void> {
+    await updatePasswordFlow(data);
+}
