@@ -51,4 +51,5 @@ export interface User {
     username: string;
     password?: string; // Plain text, only used for creation
     password_hash: string; // Hashed password for storage
+    last_login_time?: string;
 }

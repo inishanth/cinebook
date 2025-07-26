@@ -114,6 +114,17 @@ const loginUserFlow = ai.defineFlow(
             throw new Error('Incorrect password.');
         }
 
+        // Step 3: Update last login time
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ last_login_time: new Date().toISOString() })
+            .eq('user_id', user.user_id);
+
+        if (updateError) {
+            // Log the error but don't block the login process
+            console.error('Failed to update last login time:', updateError.message);
+        }
+
         // Return user data, excluding the password hash
         const { password_hash, ...userData } = user;
         return { ...userData, id: userData.user_id };
