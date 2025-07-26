@@ -20,7 +20,6 @@ import { useAuth } from '@/context/auth-context';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
-import { UpcomingReleases } from '../movie/upcoming-releases';
 import { initializeFirebase, requestNotificationPermission } from '@/lib/firebase';
 
 
@@ -287,7 +286,6 @@ export function TopHeader() {
                             <InlineSearchBar />
                         </div>
                         <div className="flex items-center gap-2 ml-auto">
-                            <UpcomingReleases />
                             {isAuthLoading ? <Skeleton className="h-10 w-10 rounded-full" /> : <UserProfileButton />}
                         </div>
                     </>

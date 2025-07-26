@@ -7,6 +7,7 @@ import * as React from 'react';
 import { Suspense } from 'react';
 
 const movieCategories = [
+    { id: 'upcoming', title: 'Upcoming' },
     { id: 'recently_released', title: 'Recently Released' },
     { id: 'popular', title: 'Popular' },
     { id: 'top_rated', title: 'Top Rated' },
@@ -16,6 +17,7 @@ async function InitialDataLoader() {
   const moviesByCat: Record<string, Movie[]> = {};
 
   const [
+    upcoming,
     recentlyReleased,
     popular,
     topRated,
@@ -23,6 +25,7 @@ async function InitialDataLoader() {
     languages,
     actors
   ] = await Promise.all([
+      getMoviesByCategory('upcoming'),
       getMoviesByCategory('recently_released'),
       getMoviesByCategory('popular', 0),
       getMoviesByCategory('top_rated'),
@@ -31,6 +34,7 @@ async function InitialDataLoader() {
       getLeadActors()
   ]);
 
+  moviesByCat['Upcoming'] = upcoming;
   moviesByCat['Recently Released'] = recentlyReleased;
   moviesByCat['Popular'] = popular;
   moviesByCat['Top Rated'] = topRated;
