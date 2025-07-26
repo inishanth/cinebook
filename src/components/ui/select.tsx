@@ -35,10 +35,10 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, variant, icon, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(selectTriggerVariants({ variant }), className, 'gap-2')}
+    className={cn(selectTriggerVariants({ variant }), 'gap-1 sm:gap-2 text-xs sm:text-sm', className)}
     {...props}
   >
-    {icon}
+    {icon && <div className="hidden sm:block">{icon}</div>}
     <div className="flex-1 text-left">{children}</div>
     <SelectPrimitive.Icon asChild>
       <ChevronDown className="h-4 w-4 opacity-50" />
@@ -173,5 +173,3 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 }
-
-  

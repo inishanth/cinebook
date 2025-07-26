@@ -11,14 +11,12 @@ import { MovieDetailModal } from '@/components/movie/movie-detail-modal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MovieCard } from '@/components/movie/movie-card';
-import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX, Filter } from 'lucide-react';
+import { ArrowLeft, Film, Users, Languages, CalendarClock, FilterX } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getLanguageName } from '@/lib/utils';
 import { movieCategories } from '@/lib/movie-categories';
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 
 const recencyOptions = [
@@ -35,8 +33,8 @@ export function CategoryRowSkeleton() {
             <Skeleton className="h-7 w-48" />
             <div className="flex space-x-3 sm:space-x-4">
                 {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex-shrink-0 w-24 sm:w-32 group">
-                         <Skeleton className="w-full h-[144px] sm:h-[192px] rounded-lg" />
+                    <div key={i} className="flex-shrink-0 w-28 sm:w-36 group">
+                         <Skeleton className="w-full h-[168px] sm:h-[216px] rounded-lg" />
                          <div className="mt-2 space-y-2">
                              <Skeleton className="h-4 w-3/4" />
                          </div>
@@ -59,7 +57,7 @@ function MoviesByFilter({ movies, onBack, onMovieClick }: { movies: Movie[], onB
                 </h2>
             </div>
             {movies.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
                     {movies.map(movie => (
                         <MovieCard key={movie.id} movie={movie} onClick={() => onMovieClick(movie)} />
                     ))}
@@ -85,7 +83,7 @@ function FilterControls({
     selectedRecency: string, setSelectedRecency: (v: string) => void,
 }) {
     return (
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 items-start">
             <Select value={selectedGenre} onValueChange={setSelectedGenre}>
                 <SelectTrigger className="w-full" icon={<Film />}>
                     <SelectValue placeholder="Genre" />
@@ -165,7 +163,6 @@ export function MovieHomeClient({
     const [reloadingCategory, setReloadingCategory] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const { toast } = useToast();
-    const isMobile = useIsMobile();
 
     const [popularMoviesPage, setPopularMoviesPage] = React.useState(0);
     const [reloadingCategoryPage, setReloadingCategoryPage] = React.useState(false);
@@ -332,7 +329,7 @@ export function MovieHomeClient({
 
     return (
         <>
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
                  {hasActiveFilters && (
                     <div className="flex justify-end mb-4 -mt-2 -mr-2">
                         <Button variant="ghost" onClick={handleClearFilters}>
@@ -341,42 +338,17 @@ export function MovieHomeClient({
                         </Button>
                     </div>
                  )}
-                {isMobile ? (
-                    <Drawer>
-                        <DrawerTrigger asChild>
-                             <Button variant="outline" className="w-full">
-                                <Filter className="mr-2 h-4 w-4" />
-                                Filters
-                            </Button>
-                        </DrawerTrigger>
-                        <DrawerContent>
-                            <DrawerHeader>
-                                <DrawerTitle>Filter Movies</DrawerTitle>
-                                <DrawerDescription>Find your next favorite movie.</DrawerDescription>
-                            </DrawerHeader>
-                            <div className="p-4">
-                                <FilterControls {...filterProps} />
-                            </div>
-                            <DrawerFooter>
-                                <DrawerClose asChild>
-                                    <Button>Apply Filters</Button>
-                                </DrawerClose>
-                            </DrawerFooter>
-                        </DrawerContent>
-                    </Drawer>
-                ) : (
-                    <div className="bg-neutral-800 border border-border rounded-2xl p-4">
-                        <FilterControls {...filterProps} />
-                    </div>
-                )}
+                <div className="bg-neutral-800/50 sm:border sm:border-border rounded-lg p-2 sm:p-4">
+                    <FilterControls {...filterProps} />
+                </div>
             </div>
 
             {isFilteredView ? (
                 loadingFilteredMovies ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
                         {[...Array(12)].map((_, i) => (
-                           <div key={i} className="flex-shrink-0 w-24 sm:w-32 group">
-                                <Skeleton className="w-full h-[144px] sm:h-[192px] rounded-lg" />
+                           <div key={i} className="flex-shrink-0 w-28 sm:w-36 group">
+                                <Skeleton className="w-full h-[168px] sm:h-[216px] rounded-lg" />
                                 <div className="mt-2 space-y-2">
                                     <Skeleton className="h-4 w-3/4" />
                                 </div>
@@ -398,7 +370,7 @@ export function MovieHomeClient({
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="flex flex-col space-y-8 sm:space-y-12"
+                    className="flex flex-col space-y-6 sm:space-y-10"
                 >
                     <>
                         {movieCategories.map((cat) => (

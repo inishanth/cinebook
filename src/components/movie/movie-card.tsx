@@ -32,7 +32,7 @@ export function MovieCard({ movie, onClick, loading = false }: MovieCardProps) {
   return (
     <motion.div
       onClick={onClick}
-      className="flex-shrink-0 w-24 sm:w-32 cursor-pointer group"
+      className="flex-shrink-0 w-28 sm:w-36 cursor-pointer group"
       whileHover={{ scale: 1.05 }}
       transition={{ duration: 0.2 }}
     >
