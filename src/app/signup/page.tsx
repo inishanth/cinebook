@@ -49,107 +49,78 @@ export default function SignupPage() {
     }
   };
 
-  const pageVariants = {
-    initial: { opacity: 0, x: 50 },
-    in: { opacity: 1, x: 0 },
-    out: { opacity: 0, x: -50 },
-  };
-
-  const pageTransition = {
-    type: 'tween',
-    ease: 'easeInOut',
-    duration: 0.5,
-  };
-
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-sm mx-auto overflow-hidden">
-        <AnimatePresence mode="wait">
-          {!isSuccess ? (
-            <motion.div
-              key="form"
-              initial="initial"
-              animate="in"
-              exit="out"
-              variants={pageVariants}
-              transition={pageTransition}
-            >
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Create an Account</CardTitle>
-                <CardDescription>Enter your details to get started.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      placeholder="Choose a username"
-                      required
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Create a password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Account
-                  </Button>
-                </form>
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{' '}
-                  <Link href="/login" className="underline text-primary">
-                    Sign In
-                  </Link>
-                </p>
-              </CardFooter>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="success"
-              initial="initial"
-              animate="in"
-              exit="out"
-              variants={pageVariants}
-              transition={pageTransition}
-              className="p-6 text-center"
-            >
-              <CardHeader>
-                <CardTitle className="text-2xl text-primary">Success!</CardTitle>
-                <CardDescription>Your account has been created successfully.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full" onClick={() => router.push('/login')}>
-                  <Link href="/login">Proceed to Sign In</Link>
+        {!isSuccess ? (
+          <div>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl">Create an Account</CardTitle>
+              <CardDescription>Enter your details to get started.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Choose a username"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Create a password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Account
                 </Button>
-              </CardContent>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{' '}
+                <Link href="/login" className="underline text-primary">
+                  Sign In
+                </Link>
+              </p>
+            </CardFooter>
+          </div>
+        ) : (
+          <div className="p-6 text-center">
+            <CardHeader>
+              <CardTitle className="text-2xl text-primary">Success!</CardTitle>
+              <CardDescription>Your account has been created successfully.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="w-full" onClick={() => router.push('/login')}>
+                <Link href="/login">Proceed to Sign In</Link>
+              </Button>
+            </CardContent>
+          </div>
+        )}
       </Card>
     </div>
   );
