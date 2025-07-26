@@ -198,8 +198,6 @@ export async function logoutUser(data: z.infer<typeof LogoutUserInputSchema>): P
     await logoutUserFlow(data);
 }
 
-// New Password Reset Flows using Supabase Auth
-
 const PasswordResetEmailInputSchema = z.object({
     email: z.string().email(),
 });
@@ -212,14 +210,13 @@ const sendPasswordResetOtpFlow = ai.defineFlow({
     const supabase = getSupabaseClient();
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: process.env.NEXT_PUBLIC_SITE_URL, // Not used by us, but required by Supabase
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
     });
 
     if (error) {
         console.error('Supabase password reset error:', error.message);
         // Do not throw the raw error to prevent leaking user existence info.
-        // A generic error will be handled by the client.
-        throw new Error('Could not start password reset process.');
+        // The UI will show a generic message.
     }
 });
 
@@ -240,33 +237,24 @@ const resetPasswordWithOtpFlow = ai.defineFlow({
 }, async ({ email, otp, newPassword }) => {
     const supabase = getSupabaseClient();
 
-    // 1. Verify the OTP
     const { data: { session }, error: otpError } = await supabase.auth.verifyOtp({
       email: email,
       token: otp,
       type: 'email',
     });
 
-    if (otpError) {
-      console.error('Supabase OTP verification error:', otpError.message);
-      throw new Error("Invalid or expired OTP. Please try again.");
-    }
-
-    if (!session || !session.user) {
-        throw new Error("Could not verify user. The session is invalid.");
+    if (otpError || !session || !session.user) {
+      console.error('Supabase OTP verification error:', otpError?.message);
+      throw new Error("Invalid or expired OTP. Please request a new one.");
     }
     
-    // We need a service role client to bypass RLS and update a user's password hash directly in our custom table.
-    // The regular client authenticated with the session cannot do this.
-     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Supabase service role key not found.');
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Supabase service role key not found for password update.');
     }
     const supabaseAdmin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     
-    // 2. Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // 3. Update the password in our custom 'users' table
     const { error: updateError } = await supabaseAdmin
         .from('users')
         .update({ password_hash: hashedPassword })
@@ -274,7 +262,7 @@ const resetPasswordWithOtpFlow = ai.defineFlow({
     
     if (updateError) {
         console.error("Failed to update password in custom table:", updateError.message);
-        throw new Error('Failed to update password.');
+        throw new Error('Failed to update your password. Please try again.');
     }
 });
 

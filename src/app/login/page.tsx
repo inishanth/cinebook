@@ -19,11 +19,8 @@ export default function LoginPage() {
   const router = useRouter();
 
   React.useEffect(() => {
-    // If the user lands here with a hash, open the dialog.
-    if(window.location.hash === '#forgot-password') {
-        const trigger = document.getElementById('forgot-password-trigger');
-        trigger?.click();
-    }
+    // This page is now only for password reset.
+    // The #forgot-password hash is handled by the main login dialog now.
   }, []);
 
   const handleResetRequest = async (e: React.FormEvent) => {
@@ -35,7 +32,8 @@ export default function LoginPage() {
       router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-      toast({ variant: 'destructive', title: 'Error', description: errorMessage });
+      // Supabase flow is designed to not reveal if an email exists, so we show a generic success-looking message.
+      toast({ title: 'Check your email', description: 'If an account with that email exists, a password reset code has been sent.' });
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +45,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Password Reset</CardTitle>
           <CardDescription>
-            Login is now handled in a pop-up from the main page. This page is for password resets. Enter your email to receive a reset code.
+            Enter your email address below to receive a password reset code.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleResetRequest}>

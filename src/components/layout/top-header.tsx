@@ -243,7 +243,7 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
                 <Input id="password-dialog" type="password" placeholder="Enter password" required value={password} onChange={(e) => setPassword(e.target.value)} />
                 <div className="flex justify-end">
                     <Button variant="link" className="p-0 h-auto text-xs" asChild>
-                        <Link href="/login#forgot-password" onClick={() => onOpenChange(false)}>
+                        <Link href="/login" onClick={() => onOpenChange(false)}>
                             Forgot Password?
                         </Link>
                     </Button>
@@ -395,7 +395,7 @@ export function TopHeader() {
     const { scrollY } = useScroll();
     const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
-    const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/reset-password';
+    const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/reset-password' || pathname === '/update-password';
     const { isLoading: isAuthLoading } = useAuth();
 
     useEffect(() => {

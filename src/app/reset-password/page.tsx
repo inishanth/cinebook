@@ -45,11 +45,7 @@ export default function ResetPasswordPage() {
       setError("Password must be at least 6 characters.");
       return;
     }
-    if (!/^\d{6}$/.test(otp)) {
-      setError("OTP must be 6 digits.");
-      return;
-    }
-
+    
     setIsLoading(true);
     try {
       await resetPassword({ email, otp, newPassword });
@@ -63,22 +59,36 @@ export default function ResetPasswordPage() {
     }
   };
 
+  if (isSuccess) {
+     return (
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+            <Card className="w-full max-w-sm mx-auto">
+                <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Password Updated!</CardTitle>
+                <CardDescription>
+                    You may now proceed to sign in with your new password.
+                </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild className="w-full" onClick={() => router.push('/')}>
+                        <Link href="/">Back to Home</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+     )
+  }
+
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-sm mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            {isSuccess ? 'Password Updated!' : 'Reset Your Password'}
-          </CardTitle>
+          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
           <CardDescription>
-            {isSuccess 
-              ? 'You may now proceed to sign in with your new password.' 
-              : 'Enter the 6-digit code sent to your email and your new password.'
-            }
+            Enter the code sent to your email and your new password.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!isSuccess ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -87,8 +97,8 @@ export default function ResetPasswordPage() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  readOnly
+                  className="bg-secondary"
                 />
               </div>
                <div className="space-y-2">
@@ -99,8 +109,7 @@ export default function ResetPasswordPage() {
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter the 6-digit code"
-                  maxLength={6}
+                  placeholder="Enter the code"
                 />
               </div>
               <div className="space-y-2">
@@ -133,23 +142,17 @@ export default function ResetPasswordPage() {
                 Reset Password
               </Button>
             </form>
-          ) : (
-            <Button asChild className="w-full">
-              <Link href="/login">Back to Sign In</Link>
-            </Button>
-          )}
         </CardContent>
-         {!isSuccess && (
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
+        <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
                 Didn't get a code?{' '}
                 <Link href="/login" className="underline text-primary">
-                  Go back
+                  Request a new one
                 </Link>
-              </p>
-            </CardFooter>
-        )}
+            </p>
+        </CardFooter>
       </Card>
     </div>
   );
 }
+
