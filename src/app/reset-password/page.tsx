@@ -26,10 +26,22 @@ export default function ResetPasswordPage() {
   const [error, setError] = React.useState<string | null>(null);
   
   React.useEffect(() => {
+    // Supabase redirects with the token in the hash, not query params
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get('access_token');
+    
+    // The access_token is the OTP for verification purposes
+    if (accessToken) {
+      setOtp(accessToken);
+    }
+    
+    // For user convenience, let's try to get email from query params
     const emailFromQuery = searchParams.get('email');
     if (emailFromQuery) {
       setEmail(emailFromQuery);
     }
+
   }, [searchParams]);
 
 
@@ -45,6 +57,14 @@ export default function ResetPasswordPage() {
       setError("Password must be at least 6 characters.");
       return;
     }
+     if (!otp) {
+      setError("No reset token found. Please use the link from your email.");
+      return;
+    }
+     if (!email) {
+      setError("Email is missing. Please try the reset process again.");
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -54,6 +74,7 @@ export default function ResetPasswordPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
       setError(errorMessage);
+      toast({ variant: 'destructive', title: 'Error', description: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +106,7 @@ export default function ResetPasswordPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Reset Your Password</CardTitle>
           <CardDescription>
-            Enter the code sent to your email and your new password.
+            Enter your new password below. The reset token from your email has been automatically detected.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,19 +118,10 @@ export default function ResetPasswordPage() {
                   type="email"
                   required
                   value={email}
-                  readOnly
-                  className="bg-secondary"
-                />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="otp">Reset Code (OTP)</Label>
-                <Input
-                  id="otp"
-                  type="text"
-                  required
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter the code"
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className={!email ? "" : "bg-secondary"}
+                  readOnly={!!searchParams.get('email')}
                 />
               </div>
               <div className="space-y-2">
@@ -137,22 +149,21 @@ export default function ResetPasswordPage() {
               {error && (
                 <p className="text-sm text-destructive">{error}</p>
               )}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !otp}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Reset Password
               </Button>
             </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex justify-center text-center">
             <p className="text-sm text-muted-foreground">
-                Didn't get a code?{' '}
-                <Link href="/login" className="underline text-primary">
-                  Request a new one
-                </Link>
+                If you didn't receive an email, please{' '}
+                <Link href="/" className="underline text-primary">
+                  return home to try again
+                </Link>.
             </p>
         </CardFooter>
       </Card>
     </div>
   );
 }
-

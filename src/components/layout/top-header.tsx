@@ -225,21 +225,29 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
     }
   };
   
-   const handleResetRequest = async (e: React.FormEvent) => {
+  const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await sendPasswordResetOtp(email);
-      toast({ title: 'Check your email', description: 'If an account with that email exists, a password reset link has been sent.' });
+      // The backend won't throw an error for non-existent emails to prevent enumeration attacks.
+      // So we always show a success-like message.
+      toast({
+        title: 'Check your email',
+        description: `If an account with that email exists, a password reset link has been sent. The link will redirect you to a page to set a new password.`,
+      });
+      // Also pass the email to the reset page for pre-filling the form.
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
       onAuthSuccess(); // Close the dialog
     } catch (error) {
-      // The flow is designed to not reveal if an email exists, so we show a generic success-looking message.
-      toast({ title: 'Check your email', description: 'If an account with that email exists, a password reset link has been sent.' });
-      onAuthSuccess(); // Close the dialog
+      // This catch block is for unexpected server errors.
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+      toast({ variant: 'destructive', title: 'Request Failed', description: errorMessage });
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <DialogContent className="sm:max-w-[425px]">
@@ -316,7 +324,7 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
          <>
             <DialogHeader className="text-center">
               <DialogTitle className="text-2xl">Reset Password</DialogTitle>
-              <DialogDescription>Enter your email to receive a password reset link.</DialogDescription>
+              <DialogDescription>Enter your email to receive a password reset OTP.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleResetRequest} className="space-y-4">
               <div className="space-y-2">
@@ -325,7 +333,7 @@ function AuthDialog({ onOpenChange, onAuthSuccess }: { onOpenChange: (open: bool
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Reset Link
+                Send Reset OTP
               </Button>
             </form>
              <DialogFooter className="pt-4 !justify-center">

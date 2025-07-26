@@ -52,9 +52,9 @@ export async function sendPasswordResetOtp(email: string): Promise<void> {
     try {
         await sendPasswordResetOtpFlow({ email });
     } catch (error) {
-        // The flow now throws a generic error to prevent user enumeration.
-        // We re-throw it to be caught by the UI.
-        throw error;
+        // The flow is designed to not reveal if an email exists.
+        // We can swallow the error here and let the UI show a generic message.
+        console.error("Password reset OTP flow failed but we are not throwing to the client", error);
     }
 }
 
@@ -103,8 +103,8 @@ CREATE TABLE login_audit_log (
     failure_reason TEXT
 );
 
--- The 'password_resets' table is no longer needed with the new Supabase Auth flow.
--- If you created it based on previous instructions, you can safely remove it.
--- DROP TABLE IF EXISTS password_resets;
+-- This new flow relies on Supabase's built-in auth, which uses the `auth.users` table.
+-- The custom tables above are for storing application-specific user data.
+-- Ensure your Supabase project has Auth enabled.
 
 */
